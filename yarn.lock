@@ -964,6 +964,11 @@
     "@babel/helper-validator-identifier" "^7.24.6"
     to-fast-properties "^2.0.0"
 
+"@boengli/capacitor-fullscreen@^0.0.19":
+  version "0.0.19"
+  resolved "https://registry.npmjs.org/@boengli/capacitor-fullscreen/-/capacitor-fullscreen-0.0.19.tgz#1532ec3bbb4fe3e3881e199d258a4cdc5749ba73"
+  integrity sha512-bHw/iU3BMpmwoOz3YUoICbHUecU4pbfKuNXnGF65odVGb0+JF6Mnjj3W0eHPFzPSqvaCdSvEQszzFFflca/K5Q==
+
 "@canvas/image-data@^1.0.0":
   version "1.0.0"
   resolved "https://registry.npmjs.org/@canvas/image-data/-/image-data-1.0.0.tgz#3bd2cd856e13fc9e2c25feff360a4056857b0367"
@@ -976,10 +981,15 @@
   dependencies:
     "@capacitor/core" next
 
-"@capacitor/android@^6.0.0":
+"@capacitor/android@^6.1.1":
+  version "6.1.1"
+  resolved "https://registry.npmjs.org/@capacitor/android/-/android-6.1.1.tgz#a0843ddea92cc9739739a82a8fcd2ed6b1eaab8a"
+  integrity sha512-rhO/nH6NJizGV5KizoIoGxCmkos3HnyUzI9TNv8IVy/C8h6lPM5Gt9cxGclb6k0OBTtgv6iJVo654+m4kzv0Qg==
+
+"@capacitor/app@^6.0.0":
   version "6.0.0"
-  resolved "https://registry.npmjs.org/@capacitor/android/-/android-6.0.0.tgz#eb24c64a5c6821fbbb8db48eedf50eca18876318"
-  integrity sha512-NwL87VO9F1WY/EgvJZN9pIhjejq688k2fRW6XWNLVe3cgGE6nUb9J34KI68fhx3139cf2LVGPUYs+mwZC8esiQ==
+  resolved "https://registry.npmjs.org/@capacitor/app/-/app-6.0.0.tgz#b383c97543e2fb9462e8bd69c0f512c33bba0089"
+  integrity sha512-X5UGd90Jh5p9rmoPyMqFyFWqOypdJgVJhYcM5X1YyDVJJGzmJ5MuYv1+ajj5DW9Qyh+5a3th9WYptdGby8jidA==
 
 "@capacitor/assets@^3.0.5":
   version "3.0.5"
@@ -1022,10 +1032,10 @@
     tslib "^2.4.0"
     xml2js "^0.5.0"
 
-"@capacitor/cli@^6.0.0":
-  version "6.0.0"
-  resolved "https://registry.npmjs.org/@capacitor/cli/-/cli-6.0.0.tgz#78def1dcf8a0addd10039edf32ed15b5a0f0b1aa"
-  integrity sha512-6z30P0mr53l0VXPwFjzDVuKIt1991bqUSSfShTT2efWN+rBSGSAH2bPID6qSZornH1n5R5Lh/UHq/aGuW523MQ==
+"@capacitor/cli@^6.1.1":
+  version "6.1.1"
+  resolved "https://registry.npmjs.org/@capacitor/cli/-/cli-6.1.1.tgz#ff8423fef26572ba73177c62c8677e77968fc4c6"
+  integrity sha512-rsRqEadfnBSUX90RZj59oXvi30bpSusLMfIcgbOIArOloTgfaaWr9R471F6m3gGWF7BhNoskJpZcCgSUsfywwA==
   dependencies:
     "@ionic/cli-framework-output" "^2.2.5"
     "@ionic/utils-fs" "^3.1.6"
@@ -1046,10 +1056,10 @@
     tslib "^2.4.0"
     xml2js "^0.5.0"
 
-"@capacitor/core@^6.0.0":
-  version "6.0.0"
-  resolved "https://registry.npmjs.org/@capacitor/core/-/core-6.0.0.tgz#abfaf1013cec686cf9743cf4fdc445d10e2f13ea"
-  integrity sha512-NvxIQsJcMiIV+Le1DilR2GGyQQbDInfXK1UywGROQ5mycdFlW5XoAPZ+MKnFGB123RoEgE3uhDGgwTXUmSlX9A==
+"@capacitor/core@^6.1.1":
+  version "6.1.1"
+  resolved "https://registry.npmjs.org/@capacitor/core/-/core-6.1.1.tgz#7bdf19a28a9f345a2f31179264b6de2bd9de29cb"
+  integrity sha512-b1s4WDMy3Y1/owTG2/XNGCI6G5SDpF2NT1JMAgcShue13fiAuHA+Ans7Wfei6McvR0KdopAE6tMHmDAfL5PM8Q==
   dependencies:
     tslib "^2.1.0"
 
@@ -1060,15 +1070,30 @@
   dependencies:
     tslib "^2.1.0"
 
-"@capacitor/ios@6.0.0":
-  version "6.0.0"
-  resolved "https://registry.npmjs.org/@capacitor/ios/-/ios-6.0.0.tgz#b04ce2967d732c73ebf29ec38b4b585255930e43"
-  integrity sha512-7mAs3gjWiE5DPM4AGPduqFSDGXCPwwqQRMzbohVway7/cTWnHomHV8mIojMZE4GILeWO2fILbyu3C8q9pHg2vg==
+"@capacitor/ios@^6.1.1":
+  version "6.1.1"
+  resolved "https://registry.npmjs.org/@capacitor/ios/-/ios-6.1.1.tgz#4f82544957ecc2b945ec456a22f4cca3b2a06f30"
+  integrity sha512-he6+Fhj6x1dSnOzM98xaPvioOU8MNO+qpodCJwnHE3mIRonTpFutXJK8DP8fnNhjDPk2km9VafLSfOeiZXNv3Q==
 
 "@capacitor/preferences@^6.0.0":
   version "6.0.0"
   resolved "https://registry.npmjs.org/@capacitor/preferences/-/preferences-6.0.0.tgz#ebdce95b04d584bb731fd03aa4265ac2944e1208"
   integrity sha512-4A49UKEc/sgf28TFNwRX4Kx6G0oMeRC9btA2voaEuL2LZd2l8IMfAEFDIrfQWi5rYE6RWenEUexUTyiEZnYFvQ==
+
+"@capacitor/screen-orientation@^7.0.1":
+  version "7.0.1"
+  resolved "https://registry.npmjs.org/@capacitor/screen-orientation/-/screen-orientation-7.0.1.tgz#e23672034700515126883cf97eb2a598fde4d48f"
+  integrity sha512-6s2CLPAy7xFCzAXtj///xR1/BqqsX0NBt1BkhffPAh6jOs3n3CZsbh+YnPEptyeBBUtpsWWOE9rrvgtvy6iKJg==
+
+"@capacitor/splash-screen@^7.0.1":
+  version "7.0.1"
+  resolved "https://registry.npmjs.org/@capacitor/splash-screen/-/splash-screen-7.0.1.tgz#ea70d39c4346db4558f749eeb2d3ac2f5c34c550"
+  integrity sha512-Nbqw9bEIe7uHj/HOT81mf4jT6uK1YykozpQw/uIKQDueMg6RJYaJK2/TMajIOohLk8fJF4TYIc1i9nGjNLnfGg==
+
+"@capacitor/status-bar@^7.0.1":
+  version "7.0.1"
+  resolved "https://registry.npmjs.org/@capacitor/status-bar/-/status-bar-7.0.1.tgz#6bd3769ef35158c961ff2a6b571c03e9bce55809"
+  integrity sha512-iDv3mXYo9CdxYRVwt3/pRyuk25p7Sn4GfaS/zMZyVIqTzsvKLCIIH3GdKK+ta+nsNcAVpCw/t5jFEBt1D18ctA==
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"

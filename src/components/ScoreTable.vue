@@ -16,6 +16,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { Capacitor } from '@capacitor/core'
 
 import { GAME_TYPES } from '@/utils/conts'
 
@@ -60,7 +61,7 @@ watch(
 	() => {
 		if (!isSecondType.value) {
 			setTimerStart()
-			if (import.meta.env.VITE_APP_MODE !== 'TEST') {
+			if (Capacitor.getPlatform() === 'android') {
 				adsStore.toggleLoading(true)
 				Admob.interstitial({
 					isFirst: false,

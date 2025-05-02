@@ -52,10 +52,10 @@ class Admob {
 
 		const options: BannerAdOptions = {
 			adId: 'ca-app-pub-9702825788968948/5814818821',
-			adSize: BannerAdSize.BANNER,
+			adSize: BannerAdSize.ADAPTIVE_BANNER,
 			position: BannerAdPosition.BOTTOM_CENTER,
 			margin: 0,
-			// isTesting: true,
+			isTesting: import.meta.env.VITE_APP_MODE === 'TEST',
 			// npa: true
 		}
 
@@ -68,6 +68,10 @@ class Admob {
 
 	async hideBanner() {
 		await AdMob.hideBanner()
+	}
+
+	async removeBanner() {
+		await AdMob.removeBanner()
 	}
 
 	async interstitial({
@@ -101,7 +105,7 @@ class Admob {
 
 		const options: AdOptions = {
 			adId: 'ca-app-pub-9702825788968948/5638576464',
-			// isTesting: true,
+			isTesting: import.meta.env.VITE_APP_MODE === 'TEST',
 			// npa: true
 		}
 

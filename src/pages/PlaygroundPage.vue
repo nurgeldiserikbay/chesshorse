@@ -8,6 +8,7 @@ import {
 	onMounted,
 	onBeforeUnmount,
 } from 'vue'
+import { Capacitor } from '@capacitor/core'
 
 import { TypeBoard } from '@/game/types'
 import { Game } from '@/game/game'
@@ -72,7 +73,6 @@ const isGameEnd = computed(() => {
 	if (isFirstType.value) {
 		return !pillCounts.value
 	} else if (isSecondType.value) {
-		console.log('possibleMoves', !possibleMoves.value?.length)
 		return !possibleMoves.value?.length
 	} else if (isThirdType.value) {
 		return isTimeEnd.value
@@ -98,22 +98,17 @@ watch(
 
 onMounted(async () => {
 	try {
-		if (import.meta.env.VITE_APP_MODE !== 'TEST') {
-			if (adsStore.bannerInited) {
-				await Admob.resumeBanner()
-			} else {
-				await Admob.showBanner()
-				adsStore.bannerInit()
-			}
+		if (Capacitor.getPlatform() === 'android') {
+			await Admob.showBanner()
 		}
 	} catch (error: any) {
 		// console.log(error)
 	}
 })
 
-onBeforeUnmount(() => {
-	if (import.meta.env.VITE_APP_MODE !== 'TEST') {
-		Admob.hideBanner()
+onBeforeUnmount(async () => {
+	if (Capacitor.getPlatform() === 'android') {
+		await Admob.removeBanner()
 	}
 })
 
