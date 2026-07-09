@@ -27,7 +27,7 @@ function clickOnType(type: GAME_TYPE) {
 					<span>Classic</span>
 				</button>
 				<div class="level-type__desc">
-					Need to collect all the pills and open level by level
+					Collect all the tokens, progressing through levels in order
 				</div>
 			</div>
 			<div class="level-type">
@@ -35,10 +35,10 @@ function clickOnType(type: GAME_TYPE) {
 					class="level-type__title"
 					@click="clickOnType(GAME_TYPES.NO_WAY_BACK)"
 				>
-					<span>No way back</span>
+					<span>One Way</span>
 				</button>
 				<div class="level-type__desc">
-					Need to collect all the pills. Previous tiles will disappear
+					Every move is final — there’s no way back
 				</div>
 			</div>
 			<div class="level-type">
@@ -46,17 +46,17 @@ function clickOnType(type: GAME_TYPE) {
 					class="level-type__title"
 					@click="clickOnType(GAME_TYPES.BY_TIME)"
 				>
-					<span>For Time</span>
+					<span>Time Attack</span>
 				</button>
-				<div class="level-type__desc">Collect the pills in the given time</div>
+				<div class="level-type__desc">
+					Collect as many tokens as possible within the time limit
+				</div>
 			</div>
 		</div>
 	</div>
 </template>
 
 <style lang="scss" scoped>
-@import '@/assets/_common.scss';
-
 .level-types-page {
 	display: flex;
 	flex-direction: column;

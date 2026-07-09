@@ -34,8 +34,6 @@ function timeend() {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/_common.scss';
-
 .head-main {
 	width: 100%;
 	height: 65px;
@@ -48,7 +46,7 @@ function timeend() {
 	flex-shrink: 0;
 	gap: 15px;
 
-	@media screen and (max-width: $media-tablet) {
+	@media screen and (max-width: 780px) {
 		padding: 8px 15px;
 	}
 }

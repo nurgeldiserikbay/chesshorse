@@ -8,7 +8,6 @@ import StartPage from '@/pages/StartPage.vue'
 import LevelTypes from '@/pages/LevelTypes.vue'
 import LevelsPage from '@/pages/LevelsPage.vue'
 import PlaygroundPage from '@/pages/PlaygroundPage.vue'
-import LevelDrow from '@/pages/LevelDrow.vue'
 
 export const usePageStore = defineStore('PageStore', () => {
 	const currentPage = ref<PagesType>(PAGES.START)
@@ -18,7 +17,6 @@ export const usePageStore = defineStore('PageStore', () => {
 		LEVELTYPES: LevelTypes,
 		LEVELS: LevelsPage,
 		PLAYGROUND: PlaygroundPage,
-		LEVELDRAW: LevelDrow,
 	}
 
 	const currentPageComponent = computed(() => {

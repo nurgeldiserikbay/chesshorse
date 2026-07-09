@@ -72,7 +72,10 @@ const boardWidth = ref(80)
 const borderWidth = ref(16)
 
 const isPossibleMove = computed(() => (row: number, col: number) => {
-	return gameSettings.showPossibleMoves && $props.possibleMoves?.some((p) => p[0] === row && p[1] === col)
+	return (
+		gameSettings.showPossibleMoves &&
+		$props.possibleMoves?.some((p) => p[0] === row && p[1] === col)
+	)
 })
 
 const getCellStyle = computed(() => (ind: number) => {
@@ -139,10 +142,14 @@ function calculateBoardWidth() {
 	if (tableRef.value) {
 		const style = getComputedStyle(tableRef.value)
 		const width = Math.floor(parseInt(style.width))
-		const min = Math.min(width, window.innerHeight * 0.8)
-		boardWidth.value = Math.floor(
-			min / $props.board.length - Math.floor($props.board.length / 2)
-		)
+		const height = Math.floor(tableRef.value.clientHeight) || width
+		const length = $props.board.length
+		const gap = 2
+		// Board is square: fit into the smaller of available width/height.
+		const available = Math.min(width, height)
+		// Reserve space for the inter-cell gaps so the board fills the area
+		// instead of leaving it shrunken (was: min / length - floor(length / 2)).
+		boardWidth.value = Math.floor((available - gap * (length - 1)) / length)
 	}
 
 	if (window.innerWidth < 480) {
@@ -156,6 +163,7 @@ function calculateBoardWidth() {
 <style lang="scss" scoped>
 .table {
 	width: 100%;
+	flex: 1 1 auto;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -169,14 +177,14 @@ function calculateBoardWidth() {
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
-		gap: 1px;
+		gap: 2px;
 	}
 
 	&__row {
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		gap: 1px;
+		gap: 2px;
 		position: relative;
 	}
 
@@ -190,9 +198,10 @@ function calculateBoardWidth() {
 		background-size: contain;
 		background-repeat: no-repeat;
 		position: relative;
-		border-radius: 5px;
-		box-shadow: inset 0 0 5px 3px rgba(0, 0, 0, 0.4),
-			0 0 2px 1px rgba(0, 0, 0, 0.3);
+		border-radius: 4px;
+		background: #2c235c;
+		box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.6),
+			inset -2px -2px 4px rgba(255, 255, 255, 0.05);
 
 		&.is_brick {
 			opacity: 0;
@@ -202,11 +211,14 @@ function calculateBoardWidth() {
 			&::before {
 				content: '';
 				position: absolute;
-				top: 0;
-				left: 0;
-				right: 0;
-				bottom: 0;
-				background: rgba(226, 255, 4, 0.5);
+				top: 1px;
+				left: 1px;
+				right: 1px;
+				bottom: 1px;
+				border-radius: 4px;
+				background: #4adbff;
+				box-shadow: inset 2px 2px 4px rgba(140, 242, 255, 0.6),
+					inset -2px -2px 4px rgba(58, 198, 245, 0.05);
 			}
 		}
 

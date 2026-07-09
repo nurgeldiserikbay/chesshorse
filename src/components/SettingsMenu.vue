@@ -1,3 +1,35 @@
+<script lang="ts" setup>
+import { ref, computed } from 'vue'
+
+import IconSettings from '@/assets/img/settings.svg'
+import IconClose from '@/assets/img/close.svg'
+
+import UiToggle from '@/components/UiToggle.vue'
+
+import { useGameSettings } from '@/store/gameSettings'
+
+import { useAudio } from '@/composables/useAudio'
+
+// import { GAME_SETTINGS } from '@/utils/conts'
+
+const gameSettings = useGameSettings()
+const { audioActive, toggleAudio } = useAudio()
+
+const isActive = ref(false)
+
+// const isWhiteKnigt = computed(() => {
+// 	return gameSettings.horseColor === 'white'
+// })
+
+// const getHorseImage = computed(() => {
+// 	return `./img/board/${gameSettings.getGameSettings.horse}-${gameSettings.horseColor}.png`
+// })
+
+// function selectTheme(id: number) {
+// 	gameSettings.setGameSettings(id)
+// }
+</script>
+
 <template>
 	<div class="settings-menu">
 		<button class="btn settings-menu__btn" @click="isActive = true">
@@ -39,7 +71,7 @@
 								/>
 							</div>
 						</div>
-						<div class="settings-menu__option settings-menu__option--row">
+						<!-- <div class="settings-menu__option settings-menu__option--row">
 							<div class="settings-menu__option-title">Knight</div>
 							<div class="settings-menu__option-body">
 								<img :src="getHorseImage" alt="knight" class="horse" />
@@ -48,8 +80,8 @@
 									@update:modelValue="gameSettings.toggleHorseColor"
 								/>
 							</div>
-						</div>
-						<div class="settings-menu__option">
+						</div> -->
+						<!-- <div class="settings-menu__option">
 							<div class="settings-menu__option-title">Themes</div>
 							<div class="settings-menu__option-body">
 								<button
@@ -66,7 +98,7 @@
 									@click="selectTheme(setting.id)"
 								></button>
 							</div>
-						</div>
+						</div> -->
 					</div>
 				</div>
 			</div>
@@ -74,49 +106,35 @@
 	</div>
 </template>
 
-<script lang="ts" setup>
-import { ref, computed } from 'vue'
-
-import IconSettings from '@/assets/img/settings.svg'
-import IconClose from '@/assets/img/close.svg'
-
-import UiToggle from '@/components/UiToggle.vue'
-
-import { useGameSettings } from '@/store/gameSettings'
-
-import { useAudio } from '@/composables/useAudio'
-
-import { GAME_SETTINGS } from '@/utils/conts'
-
-const gameSettings = useGameSettings()
-const { audioActive, toggleAudio } = useAudio()
-
-const isActive = ref(false)
-
-const isWhiteKnigt = computed(() => {
-	return gameSettings.horseColor === 'white'
-})
-
-const getHorseImage = computed(() => {
-	return `./img/board/${gameSettings.getGameSettings.horse}-${gameSettings.horseColor}.png`
-})
-
-function selectTheme(id: number) {
-	gameSettings.setGameSettings(id)
-}
-</script>
-
 <style lang="scss" scoped>
-@import '@/assets/_common.scss';
+:root {
+	--bg: #1e1a3a;
+	--tile: #241e48;
+	--tile-hi: #2c235c;
+	--gold-ghost: rgba(255, 213, 79, 0.2);
+	--ink: #0b0920;
+	--text: #f7f7fb;
+	--muted: #cfcfe6;
+}
 
 .settings-menu {
 	display: inline-block;
 	flex-shrink: 0;
 
 	&__btn {
-		border-radius: 5px 8px 8px 12px;
-		outline: none;
-		padding: 2px 8px;
+		width: 46px;
+		height: 46px;
+		border: none;
+		border-radius: 12px;
+		background: #1d1036;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		cursor: pointer;
+		box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.6),
+			-4px -4px 10px rgba(255, 255, 255, 0.05),
+			inset 0 2px 0 0 rgba(255, 255, 255, 0.1),
+			inset 0 -2px 0 0 rgba(0, 0, 0, 0.1);
 		cursor: pointer;
 
 		svg {
@@ -124,7 +142,7 @@ function selectTheme(id: number) {
 			width: 35px;
 			height: 35px;
 
-			@media screen and (max-width: $media-tablet) {
+			@media screen and (max-width: 780px) {
 				width: 25px;
 				height: 25px;
 			}
@@ -139,11 +157,6 @@ function selectTheme(id: number) {
 		bottom: 0;
 		z-index: 1000;
 		background: rgba(0, 0, 0, 0.3);
-		background: radial-gradient(
-			circle,
-			rgba(83, 101, 210, 0.9) 0%,
-			rgba(3, 34, 110, 0.9) 100%
-		);
 		display: flex;
 		justify-content: center;
 		align-items: flex-start;
@@ -152,61 +165,71 @@ function selectTheme(id: number) {
 
 	&__modal {
 		position: relative;
+		inset: 0;
+		margin: auto;
+		width: min(92vw, 440px);
 		background: radial-gradient(
-			circle,
-			rgba(83, 101, 210, 1) 0%,
-			rgba(3, 34, 110, 1) 100%
+			120% 120% at 20% 10%,
+			var(--panel-2) 0%,
+			var(--panel-1) 60%
 		);
-		border-radius: 25px 29px 30px 15px;
-		width: 480px;
-		max-width: 80%;
-		box-sizing: border-box;
-		margin-top: 9%;
-		box-shadow: 0 0 10px 0 rgba(255, 255, 255, 0.4);
-
-		@media screen and (max-width: $media-tablet) {
-			margin-top: 25%;
-		}
+		color: var(--ink);
+		border-radius: 18px;
+		box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55),
+			inset 2px 2px 6px rgba(0, 0, 0, 0.55),
+			inset -2px -2px 6px rgba(255, 255, 255, 0.06);
+		padding: 16px 16px 12px;
+		transform: translateY(6px);
+		animation: pop 0.22s ease-out forwards;
 	}
 
 	&__modal-head {
-		padding: 15px 18px;
 		display: flex;
-		justify-content: center;
 		align-items: center;
+		justify-content: space-between;
+		padding: 6px 6px 10px;
 	}
 
 	&__head {
-		font-size: 25px;
+		margin: 0;
+		font-size: 24px;
 		font-weight: 600;
-		line-height: 1;
-		letter-spacing: 3px;
-
-		&::first-letter {
-			font-size: 32px;
-			text-transform: uppercase;
-		}
+		letter-spacing: 0.5px;
+		color: #ffd54f;
+		text-shadow: 0 0 10px rgba(255, 213, 79, 0.45);
+		text-transform: uppercase;
+		letter-spacing: 4px;
 	}
 
 	&__close {
-		position: absolute;
-		top: -10px;
-		right: -8px;
-		outline: none;
-		cursor: pointer;
+		width: 36px;
+		height: 36px;
+		border: none;
 		border-radius: 50%;
-		padding: 11px 11px;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35),
+			inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+		display: grid;
+		place-items: center;
+		cursor: pointer;
+		transition: transform 0.12s ease, box-shadow 0.12s ease;
+
+		&:hover {
+			transform: scale(1.06);
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+		}
 
 		svg {
 			display: block;
-			fill: #fecb23;
+			fill: #ffffff;
 			width: 15px;
 			height: 15px;
 		}
 	}
 
 	&__body {
-		padding: 15px 33px 38px;
+		display: grid;
+		gap: 14px;
+		padding: 8px 6px 14px;
 	}
 
 	&__option {
@@ -214,15 +237,20 @@ function selectTheme(id: number) {
 
 		&--row {
 			display: flex;
-			justify-content: space-between;
 			align-items: center;
-			gap: 25px;
+			justify-content: space-between;
+			gap: 16px;
+			padding: 10px 12px;
+			border-radius: 12px;
+			background: rgba(8, 6, 22, 0.28);
+			box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+			font-size: 16px;
 		}
 	}
 
 	&__option-title {
 		font-size: 18px;
-		font-weight: 500;
+		font-weight: 600;
 		margin-bottom: 14px;
 		color: #fff;
 	}

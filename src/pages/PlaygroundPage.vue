@@ -183,7 +183,7 @@ function initGame() {
 function clearBoard(board: TypeBoard) {
 	return board.map((row) =>
 		row.map((col) => {
-			if ((col.type = BOARD_ITEM.pill)) col.type = BOARD_ITEM.cell
+			if (col.type === BOARD_ITEM.pill) col.type = BOARD_ITEM.cell
 
 			return col
 		})
@@ -212,8 +212,8 @@ function timeend() {
 </script>
 
 <template>
-	<HeadMain :isGameEnd="isGameEnd" :settings="true" @timeend="timeend" />
 	<div class="page playground-page">
+		<HeadMain :isGameEnd="isGameEnd" :settings="true" @timeend="timeend" />
 		<div v-if="isGameEnd" class="playground-page__overlay">
 			<ResultTable
 				class="playground-page__table"
@@ -246,8 +246,11 @@ function timeend() {
 
 <style lang="scss" scoped>
 .playground-page {
+	padding-top: 40px;
 	position: relative;
 	overflow: visible;
+	display: flex;
+	flex-direction: column;
 
 	&__overlay {
 		position: fixed;
@@ -257,11 +260,6 @@ function timeend() {
 		bottom: 0;
 		z-index: 1000;
 		background: rgba(0, 0, 0, 0.3);
-		background: radial-gradient(
-			circle,
-			rgba(83, 101, 210, 0.9) 0%,
-			rgba(3, 34, 110, 0.9) 100%
-		);
 		display: flex;
 		justify-content: center;
 		align-items: flex-start;
@@ -270,7 +268,7 @@ function timeend() {
 
 	.loading {
 		width: 100%;
-		height: 100%;
+		flex: 1 1 auto;
 		display: flex;
 		justify-content: center;
 		align-items: center;

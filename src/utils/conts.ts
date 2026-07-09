@@ -8,18 +8,12 @@ export const GAME_TYPES: { [key in GAME_TYPE]: GAME_TYPE } = {
 	BY_TIME: 'BY_TIME',
 }
 
-export type PagesType =
-	| 'START'
-	| 'LEVELS'
-	| 'PLAYGROUND'
-	| 'LEVELDRAW'
-	| 'LEVELTYPES'
+export type PagesType = 'START' | 'LEVELS' | 'PLAYGROUND' | 'LEVELTYPES'
 
 export const PAGES: { [key in PagesType]: PagesType } = {
 	START: 'START',
 	LEVELS: 'LEVELS',
 	PLAYGROUND: 'PLAYGROUND',
-	LEVELDRAW: 'LEVELDRAW',
 	LEVELTYPES: 'LEVELTYPES',
 }
 
@@ -28,11 +22,10 @@ export const LEVELS = levels
 export const GAME_SETTINGS = [
 	{
 		id: 0,
-		board1: '#2156d6',
-		board2: '#2156d6',
-		bodyBg:
-			'radial-gradient(circle, rgba(83, 101, 210, 1) 0%, rgba(3, 34, 110, 1) 100%)',
-		boardBorder: '#192363',
+		board1: '#2C235C',
+		board2: '#2C235C',
+		bodyBg: '#000d2e',
+		boardBorder: 'linear-gradient(135deg, #000d2e 0%, #000d2e 100%)',
 		horse: 'horse-1',
 		board: 'board-1',
 		coinBg:

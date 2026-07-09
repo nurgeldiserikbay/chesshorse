@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { ref, computed, onBeforeUnmount } from 'vue'
 
+import IconLock from '@/assets/img/lock.svg'
+
 import { LEVELS, PAGES, GAME_TYPES } from '@/utils/conts'
 
 import HeadMain from '@/components/HeadMain.vue'
@@ -57,10 +59,11 @@ onBeforeUnmount(() => {
 					}}</span>
 					<!-- <img :src="`./img/levels/${level.img}.png`" alt="" /> -->
 				</div>
-				<div class="level__info">
-					<span class="level__row level__row--level">{{
-						level.level + 1
-					}}</span>
+				<IconLock v-if="!isLevelActive(level.level)" class="level__icon" />
+				<div
+					v-else-if="gameType && gameStats[gameType][level.level]"
+					class="level__info"
+				>
 					<div
 						v-if="gameType && gameStats[gameType][level.level]"
 						class="level__stat"
@@ -68,13 +71,10 @@ onBeforeUnmount(() => {
 						<span
 							v-if="gameType === GAME_TYPES.COLLECT_ALL"
 							class="level__row level__row--small"
-							><span>Time:</span
 							><span>{{ gameStats[gameType][level.level].time }}</span></span
 						>
 						<span class="level__row level__row--small">
-							<span v-if="gameType === GAME_TYPES.COLLECT_ALL">Moves:</span>
-							<span v-else>Pills:</span>
-							<span>{{ gameStats[gameType][level.level].moves }}</span></span
+							<span>&#9679 {{ gameStats[gameType][level.level].moves }}</span></span
 						>
 					</div>
 				</div>
@@ -84,8 +84,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
-@import '@/assets/_common.scss';
-
 .levels-page {
 	position: relative;
 
@@ -100,10 +98,14 @@ onBeforeUnmount(() => {
 		max-width: 280px;
 		color: #fff;
 		padding: 12px 25px;
-		background: radial-gradient(circle, rgb(210, 45, 59) 0%, rgb(237, 30, 30) 60%);
+		background: radial-gradient(
+			circle,
+			rgb(210, 45, 59) 0%,
+			rgb(237, 30, 30) 60%
+		);
 		box-sizing: border-box;
 
-		@media screen and (max-width: $media-phone) {
+		@media screen and (max-width: 380px) {
 			font-size: 12px;
 			padding: 8px 15px;
 			bottom: 80px;
@@ -113,53 +115,53 @@ onBeforeUnmount(() => {
 	&__list {
 		width: 100%;
 		display: flex;
-		justify-content: space-between;
+		justify-content: space-around;
 		flex-wrap: wrap;
 		gap: 25px;
 		align-items: stretch;
 		padding-bottom: 30px;
 
-		@media screen and (max-width: $media-tablet) {
+		@media screen and (max-width: 780px) {
 			gap: 15px;
-			justify-content: space-between;
+			justify-content: space-around;
 		}
 
-		@media screen and (max-width: $media-phone) {
+		@media screen and (max-width: 380px) {
 			gap: 10px;
 		}
 	}
 
 	.level {
 		position: relative;
+		width: 104px;
+		border-radius: 10px;
 		box-sizing: border-box;
+		background: linear-gradient(180deg, var(--tile-1), var(--tile-2));
+		box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.55),
+			inset -2px -2px 4px rgba(255, 255, 255, 0.05),
+			4px 4px 30px rgba(0, 0, 0, 0.6);
+		transition: transform 0.12s ease, box-shadow 0.12s ease,
+			background 0.12s ease;
 		display: flex;
 		flex-direction: column;
-		justify-content: center;
+		justify-content: space-between;
 		align-items: center;
-		font-size: 1.2rem;
-		gap: 0.5rem;
-		cursor: pointer;
-		background: transparent;
-		border: none;
-		outline: none;
-		width: 25%;
-		aspect-ratio: 1;
+		background: #0f0826;
+		border: 2px solid #1c0f37;
+		height: 124px;
 		padding: 0;
+
+		&:hover {
+			transform: translateY(-1px);
+			box-shadow:
+				0 0 4px #ffcc33,
+				0 0 5px rgba(255, 204, 51, 0.9),
+				0 0 10px rgba(255, 204, 51, 0.7);
+			border: 2px solid #ffcc33;
+		}
 
 		&--disaled {
 			cursor: auto;
-		}
-
-		@media screen and (max-width: $media-tablet) {
-			font-size: 1rem;
-			gap: 0.3rem;
-			width: 30%;
-		}
-
-		@media screen and (max-width: $media-phone) {
-			font-size: 0.8rem;
-			gap: 0.3rem;
-			width: 30%;
 		}
 
 		&:after {
@@ -183,6 +185,7 @@ onBeforeUnmount(() => {
 			max-width: 100%;
 			align-items: flex-start;
 			display: flex;
+			margin-top: 5px;
 
 			img {
 				max-width: 50%;
@@ -191,30 +194,44 @@ onBeforeUnmount(() => {
 			}
 		}
 
-		&--disaled .level__img {
-			display: none;
+		&__icon {
+			width: 24px;
+			height: 24px;
+			margin-bottom: 24px;
 		}
 
 		&__info {
 			display: flex;
 			flex-direction: column;
 			align-items: center;
-			max-width: 80%;
-			height: 20px;
+			width: 96%;
+			margin: 0 2px 2px;
+			box-sizing: border-box;
+			background: #231618;
+			border: 2px solid #362528;
 			color: #fff;
+			padding: 5px 0;
+			border-top-left-radius: 6px;
+			border-top-right-radius: 6px;
+			border-bottom-left-radius: 10px;
+			border-bottom-right-radius: 10px;
+			white-space: no-wrap;
+			overflow: hidden;
+			font-weight: 600;
 		}
 
 		&__row {
 			width: 100%;
 			display: flex;
-			justify-content: space-between;
+			justify-content: center;
 			gap: 8px;
+			text-align: center;
 
 			&--small {
-				font-size: 0.8rem;
+				font-size: 14px;
 
-				@media screen and (max-width: $media-phone) {
-					font-size: 0.6rem;
+				&:first-child {
+					margin-bottom: 2px;
 				}
 
 				span {
@@ -241,8 +258,11 @@ onBeforeUnmount(() => {
 
 		&__stat {
 			display: flex;
+			justify-content: center;
+			align-items: center;
 			flex-wrap: wrap;
 			gap: 0 18px;
+			text-align: center;
 		}
 
 		&__stat &__row {

@@ -70,26 +70,24 @@ function next() {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/_common.scss';
-
 .result-table {
+	position: relative;
+	inset: 0;
+	margin: auto;
+	width: min(92vw, 440px);
 	background: radial-gradient(
-		circle,
-		rgba(83, 101, 210, 1) 0%,
-		rgba(3, 34, 110, 1) 100%
+		120% 120% at 20% 10%,
+		var(--panel-2) 0%,
+		var(--panel-1) 60%
 	);
-	width: 480px;
-	max-width: 80%;
-	box-sizing: border-box;
-	border-top-width: 0;
-	padding-top: 25px;
-	margin-top: 9%;
-	border-radius: 25px;
-	box-shadow: 0 0 10px 0 rgba(255, 255, 255, 0.4);
-
-	@media screen and (max-width: $media-tablet) {
-		margin-top: 25%;
-	}
+	color: var(--ink);
+	border-radius: 18px;
+	box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55),
+		inset 2px 2px 6px rgba(0, 0, 0, 0.55),
+		inset -2px -2px 6px rgba(255, 255, 255, 0.06);
+	padding: 16px 16px 12px;
+	transform: translateY(6px);
+	animation: pop 0.22s ease-out forwards;
 
 	&__modal-head {
 		padding: 15px 18px;
@@ -103,11 +101,9 @@ function next() {
 		font-weight: 600;
 		line-height: 1;
 		text-align: center;
-
-		&::first-letter {
-			font-size: 32px;
-			text-transform: uppercase;
-		}
+		color: #ffd54f;
+		text-shadow: 0 0 10px rgba(255, 213, 79, 0.45);
+		text-transform: uppercase;
 	}
 
 	&__body {
@@ -118,7 +114,7 @@ function next() {
 		display: flex;
 		flex-direction: column;
 		gap: 15px;
-		font-size: 1.8rem;
+		font-size: 1.4rem;
 		margin-bottom: 45px;
 		color: #fff;
 	}
@@ -144,10 +140,20 @@ function next() {
 		padding: 0 22px;
 
 		button {
+			width: 54px;
+			height: 54px;
+			border: none;
+			border-radius: 12px;
+			background: #1d1036;
+			display: flex;
+			justify-content: center;
+			align-items: center;
 			cursor: pointer;
-			box-sizing: border-box;
-			outline: none;
-			padding: 8px 18px;
+			box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.6),
+				-4px -4px 10px rgba(255, 255, 255, 0.05),
+				inset 0 2px 0 0 rgba(255, 255, 255, 0.1),
+				inset 0 -2px 0 0 rgba(0, 0, 0, 0.1);
+			cursor: pointer;
 
 			&:nth-child(1) {
 				border-radius: 12px 8px 19px 4px;
@@ -166,7 +172,7 @@ function next() {
 				width: 35px;
 				height: 35px;
 
-				@media screen and (max-width: $media-tablet) {
+				@media screen and (max-width: 780px) {
 					width: 25px;
 					height: 25px;
 				}
@@ -187,7 +193,7 @@ function next() {
 				text-overflow: ellipsis;
 				white-space: nowrap;
 
-				@media screen and (max-width: $media-tablet) {
+				@media screen and (max-width: 780px) {
 					min-width: unset;
 				}
 			}

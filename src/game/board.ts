@@ -107,7 +107,7 @@ export class Board {
     let point: [number, number]
   
     do {
-      point = [getRandomInt(this.board.length), getRandomInt(this.board.length)]
+      point = [getRandomInt(this.board.length - 1), getRandomInt(this.board.length - 1)]
     } while (!this.isCell(this.board, point))
   
     this.board[point[0]][point[1]].type = BOARD_ITEM.pill

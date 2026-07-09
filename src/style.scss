@@ -1,91 +1,119 @@
 @font-face {
-  font-family: 'LuckiestGuy';
-  src: url('@/assets/fonts/LuckiestGuy-Regular.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 400;
+	font-family: 'NotoSans';
+	src: url('@/assets/fonts/NotoSans-Regular.ttf') format('truetype');
+	font-style: normal;
+	font-weight: 400;
+}
+
+@font-face {
+	font-family: 'NotoSans';
+	src: url('@/assets/fonts/NotoSans-Bold.ttf') format('truetype');
+	font-style: normal;
+	font-weight: 700;
+}
+
+@font-face {
+	font-family: 'NotoSans';
+	src: url('@/assets/fonts/NotoSans-ExtraBold.ttf') format('truetype');
+	font-style: normal;
+	font-weight: 800;
 }
 
 html {
-  width: 100%;
-  height: 100%;
+	width: 100%;
+	height: 100%;
 }
 
 body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  font-family: 'LuckiestGuy', sans-serif;
-  letter-spacing: 2px;
-  background-color: #03226E;
-  box-shadow: 0px 0px 10px 3px #052F18 inset;
-  background: radial-gradient(circle, rgba(83, 101, 210, 1) 0%, rgba(3, 34, 110, 1) 100%);
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	font-family: 'NotoSans', sans-serif;
+	letter-spacing: 2px;
+	background-color: #000d2e;
+	box-shadow: 0px 0px 10px 3px #000d2e inset;
 }
 
 #app {
-  position: relative;
-  max-width: 780px;
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: stretch;
-  overflow: hidden;
-  background: url('@/assets/img/bg-img.png');
-  background-position: center;
-  background-size: cover;
+	position: relative;
+	max-width: 780px;
+	box-sizing: border-box;
+	width: 100%;
+	height: 100%;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+	align-items: stretch;
+	overflow: hidden;
+	background: url('@/assets/img/bg-img.png');
+	background-repeat: no-repeat;
+	background-position: 0%;
+	background-blend-mode: hard-light;
 }
 
 .page {
-  width: 100%;
-  max-height: 100%;
-  box-sizing: border-box;
-  padding: 0 12px;
-  flex-grow: 1;
-  overflow-y: auto;
-  padding-top: 15px;
+	width: 100%;
+	max-height: 100%;
+	box-sizing: border-box;
+	padding: 0 12px;
+	flex-grow: 1;
+	overflow-y: auto;
+	padding-top: 15px;
 
-  &::-webkit-scrollbar {
-    width: 0px;
-  }
+	&::-webkit-scrollbar {
+		width: 0px;
+	}
 
-  &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-  }
+	&::-webkit-scrollbar-track {
+		background: #f1f1f1;
+	}
 
-  &::-webkit-scrollbar-thumb {
-    background: #888;
-  }
+	&::-webkit-scrollbar-thumb {
+		background: #888;
+	}
 
-  &::-webkit-scrollbar-thumb:hover {
-    background: #555;
-  }
+	&::-webkit-scrollbar-thumb:hover {
+		background: #555;
+	}
 }
 
 button {
-  font-family: 'LuckiestGuy', sans-serif;
+	font-family: 'NotoSans', sans-serif;
 }
 
 .btn {
-  background: rgb(57, 2, 3);
-  background: linear-gradient(0deg, rgba(57, 2, 3, 1) 0%, rgba(169, 27, 4, 1) 7%, rgba(173, 25, 3, 1) 50%, rgba(206, 105, 82, 1) 92%, rgba(212, 148, 138, 1) 100%);
-  // border: 2px solid #fecb23;
-  border: none;
-  box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.6);
+	background: rgb(57, 2, 3);
+	background: linear-gradient(
+		0deg,
+		rgba(57, 2, 3, 1) 0%,
+		rgba(169, 27, 4, 1) 7%,
+		rgba(173, 25, 3, 1) 50%,
+		rgba(206, 105, 82, 1) 92%,
+		rgba(212, 148, 138, 1) 100%
+	);
+	// border: 2px solid #fecb23;
+	border: none;
+	box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.6);
 
-  &--second {
-    background: rgb(57, 2, 3);
-    background: linear-gradient(0deg, rgba(57, 2, 3, 1) 0%, rgba(169, 27, 4, 1) 0%, rgba(173, 25, 3, 1) 50%, rgba(206, 105, 82, 1) 92%, rgba(212, 148, 138, 1) 100%);
-  }
+	&--second {
+		background: rgb(57, 2, 3);
+		background: linear-gradient(
+			0deg,
+			rgba(57, 2, 3, 1) 0%,
+			rgba(169, 27, 4, 1) 0%,
+			rgba(173, 25, 3, 1) 50%,
+			rgba(206, 105, 82, 1) 92%,
+			rgba(212, 148, 138, 1) 100%
+		);
+	}
 }
 
 .title {
-  -webkit-text-stroke: 1px #fecb23;
-  letter-spacing: 5px;
-  color: #aa1e05;
-  // background: -webkit-linear-gradient(90deg, rgba(173,25,3,1) 0%, rgba(255,244,0,1) 100%);
-  // -webkit-background-clip: text;
-  // -webkit-text-fill-color: transparent;
+	-webkit-text-stroke: 1px #fecb23;
+	letter-spacing: 5px;
+	color: #aa1e05;
+	// background: -webkit-linear-gradient(90deg, rgba(173,25,3,1) 0%, rgba(255,244,0,1) 100%);
+	// -webkit-background-clip: text;
+	// -webkit-text-fill-color: transparent;
 }

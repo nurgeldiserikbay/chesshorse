@@ -1,13 +1,12 @@
 <template>
 	<div class="score-table">
 		<div v-if="!isSecondType" class="score-table__time">
-			<span>Time:</span>
 			<span class="score-table__time-value">{{ timeValue }}</span>
 		</div>
 		<div class="score-table__move">
 			<span v-if="isFirstType">Moves:</span>
 			<span v-else>Pills:</span>
-			<span v-if="gameStore.curGameStat">{{
+			<span v-if="gameStore.curGameStat" class="score-table__move--value">{{
 				gameStore.curGameStat.moves
 			}}</span>
 		</div>
@@ -142,19 +141,17 @@ function clearTimer() {
 function addZero(num: number) {
 	if (!num) return `00`
 	else if (num < 10) return `0${num}`
-	else return num
+	else return `${num}`
 }
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/_common.scss';
-
 .score-table {
 	display: flex;
 	align-items: center;
 	gap: 25px;
 
-	@media screen and (max-width: $media-mdphone) {
+	@media screen and (max-width: 520px) {
 		justify-content: center;
 		flex-direction: column;
 		gap: 0px 15px;
@@ -165,7 +162,9 @@ function addZero(num: number) {
 	&__move {
 		display: flex;
 		align-items: center;
-		gap: 15px;
+		font-weight: 600;
+		font-size: 18px;
+		gap: 5px;
 		color: #fff;
 
 		span {
@@ -175,15 +174,14 @@ function addZero(num: number) {
 				text-overflow: ellipsis;
 				white-space: nowrap;
 
-				@media screen and (max-width: $media-tablet) {
+				@media screen and (max-width: 780px) {
 					min-width: unset;
 				}
 			}
+		}
 
-			&:last-child {
-				font-size: 22px;
-				color: #fecb23;
-			}
+		&--value {
+			color: #dc1c2c;
 		}
 	}
 
