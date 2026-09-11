@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 
 import OtherGames from '@/components/OtherGames.vue'
+import OtherGamesIcon from '@/components/OtherGamesIcon.vue'
 
 import { PAGES } from '@/utils/conts'
 
@@ -14,6 +15,16 @@ const isOtherGames = ref(false)
 
 <template>
 	<div class="page start-page">
+		<!-- Вход в «Другие игры»: небольшой значок в углу. Приглушён намеренно —
+		     раздел не должен спорить за внимание с кнопкой Play. -->
+		<button
+			class="promo-games"
+			aria-label="Other games"
+			@click="isOtherGames = true"
+		>
+			<OtherGamesIcon />
+		</button>
+
 		<div class="start-page__head">
 			<div class="logo start-page__logo">
 				<img src="@/assets/img/logo.png" alt="logo" />
@@ -25,10 +36,6 @@ const isOtherGames = ref(false)
 				Play
 			</button>
 		</div>
-
-		<button class="start-page__more" @click="isOtherGames = true">
-			Other games
-		</button>
 
 		<div class="privacy">
 			<a
@@ -55,25 +62,6 @@ const isOtherGames = ref(false)
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-	}
-
-	&__more {
-		padding: 10px 20px;
-		border: none;
-		border-radius: 13px;
-		background: linear-gradient(180deg, #9280f7, #6246d6);
-		box-shadow: 0 3px 0 #3f2ba0;
-		cursor: pointer;
-		font-size: 13px;
-		font-weight: 900;
-		letter-spacing: 0.8px;
-		text-transform: uppercase;
-		color: #fff;
-
-		&:active {
-			transform: translateY(2px);
-			box-shadow: 0 1px 0 #3f2ba0;
-		}
 	}
 
 	&__logo {
@@ -157,5 +145,39 @@ const isOtherGames = ref(false)
 			}
 		}
 	}
+}
+
+/*
+   Вход в «Другие игры».
+
+   position: fixed, а не absolute: экран одностраничный и на весь вьюпорт, и так
+   значок не зависит от того, позиционирован ли предок.
+*/
+.promo-games {
+	position: fixed;
+	top: 12px;
+	right: 12px;
+	z-index: 5;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	border: none;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.28);
+	opacity: 0.55;
+	cursor: pointer;
+	color: #fff;
+}
+
+.promo-games svg {
+	width: 20px;
+	height: 20px;
+}
+
+.promo-games:active {
+	opacity: 0.85;
 }
 </style>
