@@ -20,7 +20,6 @@ import { Capacitor } from '@capacitor/core'
 import { GAME_TYPES } from '@/utils/conts'
 
 import { useGameStore } from '@/store/gameStore'
-import { useAdsStore } from '@/store/adsStore'
 
 import Admob from '@/utils/admob'
 
@@ -31,7 +30,6 @@ const $props = defineProps<{
 const $emits = defineEmits(['timeend'])
 
 const gameStore = useGameStore()
-const adsStore = useAdsStore()
 
 const MS_HOUR = 60 * 60 * 10
 const MS_MIN = 60 * 10
@@ -59,19 +57,13 @@ watch(
 	() => gameStore.curGameStat,
 	() => {
 		if (!isSecondType.value) {
+			// Реклама здесь была на старте партии: watch срабатывает с immediate,
+			// то есть объявление выходило при входе на игровой экран, а таймер
+			// запускался только после его закрытия. Google прямо называет это
+			// недопустимым («unexpected full screen interstitial» в момент старта
+			// уровня). Партия начинается без рекламы, показ перенесён на её конец.
 			setTimerStart()
-			if (Capacitor.getPlatform() === 'android') {
-				adsStore.toggleLoading(true)
-				Admob.interstitial({
-					isFirst: false,
-					onInterstitialAdClosed: () => {
-						adsStore.toggleLoading(false)
-						createTimer()
-					},
-				})
-			} else {
-				createTimer()
-			}
+			createTimer()
 		}
 	},
 	{ immediate: true }
@@ -83,6 +75,12 @@ watch(
 		if ($props.isGameEnd) {
 			clearTimer()
 			gameStore.gameEnd(timeValue.value)
+
+			// Партия закончена, результат уже на экране — естественная пауза.
+			// Показ ничего не ждёт и ничего не блокирует.
+			if (Capacitor.getPlatform() === 'android') {
+				Admob.interstitial({ onInterstitialAdClosed: () => {} })
+			}
 		}
 	}
 )

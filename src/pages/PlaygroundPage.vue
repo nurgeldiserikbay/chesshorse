@@ -26,6 +26,8 @@ import { useAdsStore } from '@/store/adsStore'
 import HeadMain from '@/components/HeadMain.vue'
 import BoardTable from '@/components/BoardTable.vue'
 import ResultTable from '@/components/ResultTable.vue'
+import AdSlot from '@/components/AdSlot.vue'
+import OtherGames from '@/components/OtherGames.vue'
 
 import Admob from '@/utils/admob'
 
@@ -34,6 +36,8 @@ const { currentLevel, curGameStat, updateGameStat, reload, gameType } = toRefs(
 	useGameStore()
 )
 const adsStore = useAdsStore()
+
+const isOtherGames = ref(false)
 const { playAudio } = useAudio()
 
 const game = ref<Game>()
@@ -241,12 +245,19 @@ function timeend() {
 			<span>.</span>
 			<span>.</span>
 		</div>
+
+		<AdSlot :interactive="isGameEnd" @open="isOtherGames = true" />
+
+		<OtherGames v-if="isOtherGames" @close="isOtherGames = false" />
 	</div>
 </template>
 
 <style lang="scss" scoped>
 .playground-page {
 	padding-top: 40px;
+	/* Низ отдан рекламной зоне: в ней либо баннер, либо кросс-промо, но пустой
+	   она не бывает. Раньше объявление приходило поверх доски. */
+	padding-bottom: var(--ad-band);
 	position: relative;
 	overflow: visible;
 	display: flex;

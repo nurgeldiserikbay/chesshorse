@@ -1,9 +1,15 @@
 <script lang="ts" setup>
+import { ref } from 'vue'
+
+import OtherGames from '@/components/OtherGames.vue'
+
 import { PAGES } from '@/utils/conts'
 
 import { usePageStore } from '@/store/pageStore'
 
 const { routeTo } = usePageStore()
+
+const isOtherGames = ref(false)
 </script>
 
 <template>
@@ -20,6 +26,10 @@ const { routeTo } = usePageStore()
 			</button>
 		</div>
 
+		<button class="start-page__more" @click="isOtherGames = true">
+			Other games
+		</button>
+
 		<div class="privacy">
 			<a
 				href="https://docs.google.com/document/d/1Hk88865_6yvWeWvi25jErXQOD6Oi5-h2qEHW5d8P25Y"
@@ -27,6 +37,8 @@ const { routeTo } = usePageStore()
 				>Privacy Policy</a
 			>
 		</div>
+
+		<OtherGames v-if="isOtherGames" @close="isOtherGames = false" />
 	</div>
 </template>
 
@@ -43,6 +55,25 @@ const { routeTo } = usePageStore()
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+	}
+
+	&__more {
+		padding: 10px 20px;
+		border: none;
+		border-radius: 13px;
+		background: linear-gradient(180deg, #9280f7, #6246d6);
+		box-shadow: 0 3px 0 #3f2ba0;
+		cursor: pointer;
+		font-size: 13px;
+		font-weight: 900;
+		letter-spacing: 0.8px;
+		text-transform: uppercase;
+		color: #fff;
+
+		&:active {
+			transform: translateY(2px);
+			box-shadow: 0 1px 0 #3f2ba0;
+		}
 	}
 
 	&__logo {
