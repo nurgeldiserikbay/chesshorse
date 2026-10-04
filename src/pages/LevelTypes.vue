@@ -6,8 +6,42 @@ import HeadMain from '@/components/HeadMain.vue'
 import { useGameStore } from '@/store/gameStore'
 import { usePageStore } from '@/store/pageStore'
 
+import crownImg from '@/assets/img/game/items/crown.webp'
+import signpostImg from '@/assets/img/game/map/signpost.webp'
+import stopwatchImg from '@/assets/img/game/ui/stopwatch.webp'
+
 const gameStore = useGameStore()
 const { routeTo } = usePageStore()
+
+const MODES: {
+	type: GAME_TYPE
+	title: string
+	desc: string
+	icon: string
+	color: string
+}[] = [
+	{
+		type: GAME_TYPES.COLLECT_ALL,
+		title: 'Classic',
+		desc: 'Collect every item, earn 3 stars',
+		icon: crownImg,
+		color: 'green',
+	},
+	{
+		type: GAME_TYPES.NO_WAY_BACK,
+		title: 'One Way',
+		desc: 'Every move is final — no way back',
+		icon: signpostImg,
+		color: 'purple',
+	},
+	{
+		type: GAME_TYPES.BY_TIME,
+		title: 'Time Attack',
+		desc: 'Collect as many as you can in time',
+		icon: stopwatchImg,
+		color: 'blue',
+	},
+]
 
 function clickOnType(type: GAME_TYPE) {
 	gameStore.setGameType(type)
@@ -18,40 +52,22 @@ function clickOnType(type: GAME_TYPE) {
 <template>
 	<HeadMain :settings="false" />
 	<div class="page level-types-page">
+		<h1 class="level-types-page__title">Select Mode</h1>
 		<div class="level-types">
-			<div class="level-type">
-				<button
-					class="level-type__title"
-					@click="clickOnType(GAME_TYPES.COLLECT_ALL)"
-				>
-					<span>Classic</span>
-				</button>
-				<div class="level-type__desc">
-					Collect all the tokens, progressing through levels in order
-				</div>
-			</div>
-			<div class="level-type">
-				<button
-					class="level-type__title"
-					@click="clickOnType(GAME_TYPES.NO_WAY_BACK)"
-				>
-					<span>One Way</span>
-				</button>
-				<div class="level-type__desc">
-					Every move is final — there’s no way back
-				</div>
-			</div>
-			<div class="level-type">
-				<button
-					class="level-type__title"
-					@click="clickOnType(GAME_TYPES.BY_TIME)"
-				>
-					<span>Time Attack</span>
-				</button>
-				<div class="level-type__desc">
-					Collect as many tokens as possible within the time limit
-				</div>
-			</div>
+			<button
+				v-for="(mode, i) in MODES"
+				:key="mode.type"
+				class="mode-card"
+				:class="`mode-card--${mode.color}`"
+				:style="{ animationDelay: `${i * 0.08}s` }"
+				@click="clickOnType(mode.type)"
+			>
+				<img class="mode-card__icon" :src="mode.icon" alt="" />
+				<span class="mode-card__text">
+					<span class="mode-card__title">{{ mode.title }}</span>
+					<span class="mode-card__desc">{{ mode.desc }}</span>
+				</span>
+			</button>
 		</div>
 	</div>
 </template>
@@ -60,93 +76,104 @@ function clickOnType(type: GAME_TYPE) {
 .level-types-page {
 	display: flex;
 	flex-direction: column;
-	justify-content: flex-start;
 	align-items: center;
+
+	&__title {
+		margin: 0 0 22px;
+		font-size: 34px;
+		font-weight: 800;
+		color: #fff;
+		letter-spacing: 1px;
+		text-shadow: 3px 0 0 #1a1033, -3px 0 0 #1a1033, 0 3px 0 #1a1033,
+			0 -3px 0 #1a1033, 2px 2px 0 #1a1033, -2px -2px 0 #1a1033,
+			2px -2px 0 #1a1033, -2px 2px 0 #1a1033, 0 6px 0 #1a1033;
+	}
 }
 
 .level-types {
+	width: 100%;
+	max-width: 420px;
 	display: flex;
 	flex-direction: column;
-	justify-content: space-around;
-	align-items: center;
-	max-height: 480px;
-	flex-grow: 1;
+	gap: 18px;
 }
 
-.level-type {
-	width: 80%;
+/* Карточка режима: иконка из набора, жёсткая обводка и тень */
+.mode-card {
 	display: flex;
-	flex-direction: column;
 	align-items: center;
-	gap: 12px;
+	gap: 14px;
+	width: 100%;
+	min-height: 96px;
+	padding: 10px 16px 10px 12px;
+	box-sizing: border-box;
+	border: 4px solid #1a1033;
+	border-radius: 20px;
+	font-family: inherit;
+	text-align: left;
+	cursor: pointer;
+	box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.35), 0 6px 0 #1a1033;
+	animation: card-in 0.4s ease-out backwards;
+	transition: transform 0.12s ease;
+
+	&:active {
+		transform: translateY(4px);
+		box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.35), 0 2px 0 #1a1033;
+	}
+
+	&--green {
+		background: linear-gradient(180deg, #6fe36a 0%, #2fb24a 100%);
+	}
+
+	&--purple {
+		background: linear-gradient(180deg, #a07cff 0%, #6a43d8 100%);
+	}
+
+	&--blue {
+		background: linear-gradient(180deg, #5cb4ff 0%, #2a6fe0 100%);
+	}
+
+	&__icon {
+		width: 72px;
+		height: 72px;
+		flex: none;
+		object-fit: contain;
+		filter: drop-shadow(0 3px 0 rgba(26, 16, 51, 0.4));
+	}
+
+	&__text {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
 
 	&__title {
-		position: relative;
-		padding: 12px 25px;
-		font-size: 22px;
-		font-weight: bold;
+		font-size: 26px;
+		font-weight: 800;
 		color: #fff;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		text-align: center;
-		outline: none;
-		text-shadow: 0 2px 0 rgba(26, 16, 51, 0.6);
-		box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.35), 0 5px 0 #1a1033;
-		white-space: nowrap;
-		letter-spacing: 2px;
-		line-height: 1;
-		cursor: pointer;
-	}
-
-	&:nth-child(1) &__title {
-		border: 3px solid #1a1033;
-		background: #c10202;
-		background: linear-gradient(
-			25deg,
-			rgba(231, 106, 106, 1) 0%,
-			rgba(193, 2, 2, 1) 100%
-		);
-		border-radius: 15px 15px 15px 15px;
-	}
-
-	&:nth-child(2) &__title {
-		border: 3px solid #1a1033;
-		background: #00c72b;
-		background: linear-gradient(
-			20deg,
-			rgba(100, 244, 131, 1) 0%,
-			rgba(0, 199, 43, 1) 100%
-		);
-		border-radius: 15px 15px 15px 15px;
-	}
-
-	&:nth-child(3) &__title {
-		border: 3px solid #1a1033;
-		background: #192363;
-		background: linear-gradient(
-			35deg,
-			rgba(130, 145, 241, 1) 0%,
-			rgba(25, 35, 99, 1) 100%
-		);
-		border-radius: 15px 15px 15px 15px;
+		letter-spacing: 1px;
+		text-shadow: 2px 0 0 #1a1033, -2px 0 0 #1a1033, 0 2px 0 #1a1033,
+			0 -2px 0 #1a1033, 0 4px 0 #1a1033;
 	}
 
 	&__desc {
-		/* Светлая карточка, как нижняя панель игрового экрана */
-		width: 100%;
-		box-sizing: border-box;
-		background: #fcf3e5;
-		border: 3px solid #fecb23;
-		border-radius: 14px;
-		box-shadow: 0 0 0 3px #1a1033, 0 5px 0 3px #1a1033;
-		padding: 12px 16px;
-		text-align: center;
-		line-height: 1.3;
 		font-size: 14px;
 		font-weight: 700;
-		letter-spacing: 1px;
-		color: #2a2457;
+		color: #fff;
+		letter-spacing: 0.5px;
+		line-height: 1.25;
+		text-shadow: 0 2px 0 rgba(26, 16, 51, 0.6);
+	}
+}
+
+@keyframes card-in {
+	from {
+		transform: translateY(20px);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
 	}
 }
 </style>

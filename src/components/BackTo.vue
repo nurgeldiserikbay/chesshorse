@@ -1,13 +1,13 @@
 <template>
 	<button v-if="pageStore.backLink" class="back-btn" @click="click">
-		<IconBack class="arrow-icon" />
+		<img :src="backImg" alt="Back" />
 	</button>
 </template>
 
 <script lang="ts" setup>
 import { usePageStore } from '@/store/pageStore'
 
-import IconBack from '@/assets/img/back.svg'
+import backImg from '@/assets/img/game/ui/back.webp'
 
 const pageStore = usePageStore()
 
@@ -17,32 +17,27 @@ function click() {
 </script>
 
 <style lang="scss" scoped>
+/* Кнопка — готовая картинка из набора: рамка и стрелка уже нарисованы */
 .back-btn {
-	width: 52px;
-	height: 52px;
+	width: 56px;
+	height: 56px;
 	flex: none;
-	border: 3px solid #1a1033;
-	border-radius: 14px;
-	background: linear-gradient(180deg, #7c5ff0 0%, #5a3cc8 100%);
-	display: flex;
-	justify-content: center;
-	align-items: center;
+	padding: 0;
+	border: none;
+	background: none;
 	cursor: pointer;
-	box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.25), 0 4px 0 #1a1033;
-	transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
+	transition: transform 0.12s ease;
 
-.back-btn:hover {
-	transform: scale(1.05);
-}
+	img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		display: block;
+		filter: drop-shadow(0 3px 0 rgba(26, 16, 51, 0.5));
+	}
 
-.back-btn:active {
-	transform: translateY(2px);
-	box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.25), 0 2px 0 #1a1033;
-}
-
-.arrow-icon {
-	width: 30px;
-	height: 30px;
+	&:active {
+		transform: translateY(3px) scale(0.96);
+	}
 }
 </style>

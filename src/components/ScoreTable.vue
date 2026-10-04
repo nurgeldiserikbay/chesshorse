@@ -1,14 +1,7 @@
 <template>
 	<div class="score-table">
 		<div v-if="!isSecondType" class="score-table__time">
-			<svg class="score-table__watch" viewBox="0 0 40 44" aria-hidden="true">
-				<rect x="15" y="1" width="10" height="6" rx="2" fill="#fecb23" stroke="#1a1033" stroke-width="2.5" />
-				<path d="M31 9l4 4" stroke="#1a1033" stroke-width="5" stroke-linecap="round" />
-				<path d="M31 9l4 4" stroke="#fecb23" stroke-width="2" stroke-linecap="round" />
-				<circle cx="20" cy="25" r="16" fill="#fecb23" stroke="#1a1033" stroke-width="3" />
-				<circle cx="20" cy="25" r="11.5" fill="#fffbe9" stroke="#1a1033" stroke-width="2" />
-				<path d="M20 25V17M20 25l5 3" stroke="#1a1033" stroke-width="2.5" stroke-linecap="round" />
-			</svg>
+			<img class="score-table__watch" :src="stopwatchImg" alt="" />
 			<span class="score-table__time-value">{{ timeValue }}</span>
 		</div>
 		<div class="score-table__move">
@@ -26,6 +19,8 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { Capacitor } from '@capacitor/core'
 
 import { GAME_TYPES } from '@/utils/conts'
+
+import stopwatchImg from '@/assets/img/game/ui/stopwatch.webp'
 
 import { useGameStore } from '@/store/gameStore'
 
@@ -177,9 +172,11 @@ function addZero(num: number) {
 	}
 
 	&__watch {
-		width: 26px;
-		height: 29px;
+		width: 30px;
+		height: 34px;
 		flex: none;
+		object-fit: contain;
+		margin: -6px 0 -4px -6px;
 	}
 
 	&__time-value {

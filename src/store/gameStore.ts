@@ -9,6 +9,7 @@ export interface IGameStat {
 	moves: number
 	date: string
 	score?: number
+	stars?: number
 }
 
 export type IGameStats = {
@@ -23,6 +24,7 @@ export const useGameStore = defineStore('GameStore', () => {
 		moves: 0,
 		date: '',
 		score: 0,
+		stars: 0,
 	})
 	const gameStats = ref<IGameStats>({
 		[GAME_TYPES.COLLECT_ALL]: {},
@@ -62,6 +64,7 @@ export const useGameStore = defineStore('GameStore', () => {
 			moves: 0,
 			date: '',
 			score: 0,
+			stars: 0,
 		}
 	}
 
@@ -83,8 +86,15 @@ export const useGameStore = defineStore('GameStore', () => {
 			curGameStat.value.date = new Date().toDateString()
 		}
 
+		// Последняя партия — время и ходы, а звёзды и очки — лучшие за всё время:
+		// переигровка не должна отнимать заработанное.
 		if (gameType.value) {
-			gameStats.value[gameType.value][currentLevel.value] = curGameStat.value
+			const prev = gameStats.value[gameType.value][currentLevel.value]
+			gameStats.value[gameType.value][currentLevel.value] = {
+				...curGameStat.value,
+				stars: Math.max(prev?.stars || 0, curGameStat.value.stars || 0),
+				score: Math.max(prev?.score || 0, curGameStat.value.score || 0),
+			}
 		}
 	}
 

@@ -15,13 +15,19 @@ import { Game } from '@/game/game'
 import { BOARD_ITEM } from '@/game/consts'
 import { calcMovesPar, starThresholds, starsForMoves } from '@/game/par'
 import {
-	SweetKind,
-	SWEET_POINTS,
+	ItemKind,
+	ItemGroup,
+	IBoardPopup,
+	KnightMood,
+	ITEM_IMG,
+	ITEM_POINTS,
 	MAX_COMBO,
-	pickSweet,
+	COMBO_WORDS,
+	itemGroup,
+	pickItem,
 	seededRandom,
 	cellKey,
-} from '@/game/sweets'
+} from '@/game/items'
 
 import { LEVELS, GAME_TYPES } from '@/utils/conts'
 import { copyArray } from '@/utils/helpers'
@@ -40,7 +46,6 @@ import OtherGames from '@/components/OtherGames.vue'
 
 import Admob from '@/utils/admob'
 
-import SweetIcon from '@/components/SweetIcon.vue'
 import starFullImg from '@/assets/img/game/star-full.webp'
 import starEmptyImg from '@/assets/img/game/star-empty.webp'
 
@@ -63,14 +68,22 @@ const horsePos = ref([0, 0])
 const totalCoins = ref(0)
 const movesPar = ref<number | null>(null)
 
-// Сладости на клетках, очки и серия. Раскладка уровня детерминирована.
-const sweets = ref<Record<string, SweetKind>>({})
+// Предметы на клетках, очки и серия. Раскладка уровня детерминирована.
+const items = ref<Record<string, ItemKind>>({})
 const score = ref(0)
 const combo = ref(0)
-const popups = ref<
-	{ id: number; row: number; col: number; points: number; combo: number }[]
->([])
+const maxCombo = ref(0)
+const collected = ref<Record<ItemGroup, number>>({
+	candy: 0,
+	star: 0,
+	crystal: 0,
+	crown: 0,
+})
+const bonuses = ref<{ label: string; points: number }[]>([])
+const popups = ref<IBoardPopup[]>([])
+const banner = ref<{ id: number; text: string; mult: number } | null>(null)
 let popupId = 0
+let bannerTimer: ReturnType<typeof setTimeout> | undefined
 
 // Счёт на панели «докручивается» до настоящего, а не прыгает.
 const shownScore = ref(0)
@@ -122,6 +135,11 @@ const starsGoal = computed(() => {
 	return null
 })
 
+const knightMood = computed<KnightMood>(() => {
+	if (!isGameEnd.value) return 'happy'
+	return resultTitle.value === 'No Moves Left' ? 'think' : 'cheer'
+})
+
 const resultTitle = computed(() => {
 	if (isThirdType.value) return "Time's Up!"
 	if (isSecondType.value && pillCounts.value) return 'No Moves Left'
@@ -149,6 +167,29 @@ const isGameEnd = computed(() => {
 		return isTimeEnd.value
 	}
 })
+
+// Итог партии считается здесь, до ScoreTable: его watch на конец игры
+// сохраняет статистику, а наш создан раньше (родитель) и срабатывает первым.
+watch(
+	() => isGameEnd.value,
+	(end) => {
+		if (!end) return
+		const list: { label: string; points: number }[] = []
+		if (isFirstType.value && stars.value === 3)
+			list.push({ label: 'Perfect route', points: 100 })
+		if (maxCombo.value >= 2)
+			list.push({ label: `Combo ×${maxCombo.value}`, points: maxCombo.value * 20 })
+		if (collected.value.crown > 0)
+			list.push({ label: 'Royal crown', points: 50 })
+		bonuses.value = list
+
+		const total = score.value + list.reduce((acc, b) => acc + b.points, 0)
+		updateGameStat.value(['score', 'stars'], {
+			score: total,
+			stars: isFirstType.value ? stars.value : 0,
+		})
+	}
+)
 
 watch(
 	() => gameSettings.showPossibleMoves,
@@ -199,7 +240,7 @@ function move({ row, col }: { row: number; col: number }) {
 	const isMoved = game.value?.move(row, col, !isSecondType.value)
 
 	if (isMoved) {
-		collectSweet(row, col, is_coin)
+		collectItem(row, col, is_coin)
 		board.value = game.value?.board?.board?.map((r) => r) || []
 		horsePos.value = [...(game.value?.horses[0]?.currentPos || [0, 0])]
 		updatePossibleMoves()
@@ -215,7 +256,7 @@ function move({ row, col }: { row: number; col: number }) {
 					if (!game.value) return
 					game.value.board.setCoin()
 					board.value = game.value?.board?.board
-					assignNewSweets()
+					assignNewItems()
 					updateGameStat.value(['moves'], {
 						moves: curGameStat.value.moves + 1,
 					})
@@ -250,12 +291,16 @@ function initGame() {
 
 	if (isThirdType.value) game.value.board.setCoin()
 
-	sweets.value = {}
+	items.value = {}
 	score.value = 0
 	shownScore.value = 0
 	combo.value = 0
+	maxCombo.value = 0
+	collected.value = { candy: 0, star: 0, crystal: 0, crown: 0 }
+	bonuses.value = []
 	popups.value = []
-	assignNewSweets(seededRandom((currentLevel.value || 0) + 1))
+	banner.value = null
+	assignNewItems(seededRandom((currentLevel.value || 0) + 1))
 
 	totalCoins.value = pillCounts.value || 0
 	movesPar.value = isFirstType.value
@@ -264,34 +309,102 @@ function initGame() {
 	updatePossibleMoves()
 }
 
-function collectSweet(row: number, col: number, isSweet: boolean) {
-	if (!isSweet) {
+function collectItem(row: number, col: number, isItem: boolean) {
+	if (!isItem) {
 		combo.value = 0
 		return
 	}
+	const kind = items.value[cellKey(row, col)] || 'candy-pink'
+	const group = itemGroup(kind)
 	combo.value = Math.min(combo.value + 1, MAX_COMBO)
-	const points = SWEET_POINTS[sweets.value[cellKey(row, col)] || 'candy']
-	const gained = points * combo.value
+	maxCombo.value = Math.max(maxCombo.value, combo.value)
+	collected.value[group]++
+
+	const gained = ITEM_POINTS[kind] * combo.value
 	score.value += gained
 	updateGameStat.value(['score'], { score: score.value })
 
 	const id = ++popupId
-	popups.value.push({ id, row, col, points: gained, combo: combo.value })
+	popups.value.push({ id, row, col, points: gained, group })
 	setTimeout(() => {
 		popups.value = popups.value.filter((p) => p.id !== id)
 	}, 900)
+
+	if (COMBO_WORDS[combo.value] && combo.value > (banner.value?.mult || 0)) {
+		showBanner(COMBO_WORDS[combo.value], combo.value)
+	}
+	flyToScore(row, col, kind)
 }
 
-// Сладость каждой клетке с монетой, у которой её ещё нет: на старте уровня —
+function showBanner(text: string, mult: number) {
+	clearTimeout(bannerTimer)
+	banner.value = { id: ++popupId, text, mult }
+	bannerTimer = setTimeout(() => {
+		banner.value = null
+	}, 1000)
+}
+
+// Копия предмета летит по дуге из клетки в значок на панели счёта.
+function flyToScore(row: number, col: number, kind: ItemKind) {
+	const cell = document.querySelector(`[data-cell="${row}:${col}"]`)
+	const target = document.querySelector('.coins-panel__coin')
+	if (!cell || !target) return
+	const from = cell.getBoundingClientRect()
+	const to = target.getBoundingClientRect()
+
+	const img = document.createElement('img')
+	img.src = ITEM_IMG[kind]
+	img.className = 'flying-item'
+	const size = from.width * 0.74
+	Object.assign(img.style, {
+		width: `${size}px`,
+		height: `${size}px`,
+		left: `${from.left + (from.width - size) / 2}px`,
+		top: `${from.top + (from.height - size) / 2}px`,
+	})
+	document.body.appendChild(img)
+
+	const dx = to.left + to.width / 2 - (from.left + from.width / 2)
+	const dy = to.top + to.height / 2 - (from.top + from.height / 2)
+	const anim = img.animate(
+		[
+			{ transform: 'translate(0, 0) scale(1.2)', opacity: 1 },
+			{
+				transform: `translate(${dx * 0.35}px, ${dy * 0.35 - 60}px) scale(1)`,
+				opacity: 1,
+				offset: 0.4,
+			},
+			{ transform: `translate(${dx}px, ${dy}px) scale(0.5)`, opacity: 0.9 },
+		],
+		{ duration: 600, easing: 'ease-in' }
+	)
+	anim.onfinish = () => {
+		img.remove()
+		target.animate(
+			[
+				{ transform: 'scale(1)' },
+				{ transform: 'scale(1.3) rotate(-8deg)' },
+				{ transform: 'scale(1)' },
+			],
+			{ duration: 250 }
+		)
+	}
+}
+
+// Предмет каждой клетке с монетой, у которой его ещё нет: на старте уровня —
 // по сиду уровня, в Time Attack — случайно для каждой новой.
-function assignNewSweets(rand: () => number = Math.random) {
+function assignNewItems(rand: () => number = Math.random) {
+	const level = currentLevel.value || 0
 	board.value?.forEach((r, ri) =>
 		r.forEach((c, ci) => {
 			const key = cellKey(ri, ci)
-			if (c.type === BOARD_ITEM.pill && !sweets.value[key]) {
-				sweets.value[key] = pickSweet(rand)
-			} else if (c.type !== BOARD_ITEM.pill && sweets.value[key]) {
-				delete sweets.value[key]
+			if (c.type === BOARD_ITEM.pill && !items.value[key]) {
+				const crowns = Object.values(items.value).filter(
+					(k) => k === 'crown'
+				).length
+				items.value[key] = pickItem(rand, level, crowns)
+			} else if (c.type !== BOARD_ITEM.pill && items.value[key]) {
+				delete items.value[key]
 			}
 		})
 	)
@@ -338,6 +451,12 @@ function timeend() {
 				:title="resultTitle"
 				:stars="isFirstType ? stars : null"
 				:goal="isFirstType && stars < 3 ? movesPar : null"
+				:par="isFirstType ? movesPar : null"
+				:baseScore="score"
+				:bonuses="bonuses"
+				:maxCombo="maxCombo"
+				:collected="collected"
+				:mood="knightMood"
 				@reload="reloadGame"
 			/>
 		</div>
@@ -347,12 +466,14 @@ function timeend() {
 			:possibleMoves="possibleMoves"
 			:horsePos="horsePos"
 			:canToBack="!isSecondType"
-			:sweets="sweets"
+			:items="items"
 			:popups="popups"
+			:banner="banner"
+			:mood="knightMood"
 			@move="move"
 		/>
 		<div v-if="!adsStore.loading && board.value" class="coins-panel">
-			<SweetIcon class="coins-panel__coin" kind="cupcake" />
+			<img class="coins-panel__coin" :src="ITEM_IMG['candy-pink']" alt="" />
 			<span v-if="combo > 1" :key="combo" class="coins-panel__combo"
 				>Combo ×{{ combo }}</span
 			>
@@ -426,8 +547,9 @@ function timeend() {
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		padding: 30px 0 var(--ad-band);
+		padding: 8px 0 var(--ad-band);
 		box-sizing: border-box;
+		overflow-y: auto;
 	}
 
 	/* Нижняя панель как в макете: светлая карточка в золотой рамке */

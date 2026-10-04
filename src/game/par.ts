@@ -1,6 +1,6 @@
 import { BOARD_ITEM } from './consts'
 import { TypeBoard } from './types'
-import { seededRandom } from './sweets'
+import { seededRandom } from './items'
 
 const KNIGHT_STEPS = [
 	[1, 2],

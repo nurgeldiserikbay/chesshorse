@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue'
 
-import IconSettings from '@/assets/img/settings.svg'
+import settingsImg from '@/assets/img/game/ui/settings.webp'
 import IconClose from '@/assets/img/close.svg'
 
 import UiToggle from '@/components/UiToggle.vue'
@@ -33,7 +33,7 @@ const isActive = ref(false)
 <template>
 	<div class="settings-menu">
 		<button class="btn settings-menu__btn" @click="isActive = true">
-			<IconSettings />
+			<img :src="settingsImg" alt="Settings" />
 		</button>
 
 		<Teleport to="body">
@@ -121,28 +121,27 @@ const isActive = ref(false)
 	display: inline-block;
 	flex-shrink: 0;
 
+	/* Кнопка — готовая картинка из набора */
 	&__btn {
-		width: 52px;
-		height: 52px;
+		width: 56px;
+		height: 56px;
 		padding: 0;
-		border: 3px solid #1a1033;
-		border-radius: 14px;
-		background: linear-gradient(180deg, #7c5ff0 0%, #5a3cc8 100%);
-		display: flex;
-		justify-content: center;
-		align-items: center;
+		border: none;
+		background: none;
+		box-shadow: none;
 		cursor: pointer;
-		box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.25), 0 4px 0 #1a1033;
+		transition: transform 0.12s ease;
 
-		&:active {
-			transform: translateY(2px);
-			box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.25), 0 2px 0 #1a1033;
+		img {
+			width: 100%;
+			height: 100%;
+			object-fit: contain;
+			display: block;
+			filter: drop-shadow(0 3px 0 rgba(26, 16, 51, 0.5));
 		}
 
-		svg {
-			fill: #fecb23;
-			width: 30px;
-			height: 30px;
+		&:active {
+			transform: translateY(3px) scale(0.96);
 		}
 	}
 

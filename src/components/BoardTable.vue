@@ -12,7 +12,15 @@
 				class="table__corner"
 				:class="`table__corner--${corner}`"
 			></span>
+
+			<!-- Золотой след прыжка по букве «Г» -->
+			<svg v-if="trail" :key="trail.id" class="trail" aria-hidden="true">
+				<polyline class="trail__glow" :points="trail.points" />
+				<polyline class="trail__line" :points="trail.points" />
+			</svg>
+
 			<div
+				ref="horseRef"
 				class="horse"
 				:class="{ hide: isHide }"
 				:style="{
@@ -21,19 +29,39 @@
 				}"
 			>
 				<div :key="hopKey" class="horse__body" :class="{ hop: hopKey > 0 }">
-					<KnightPiece class="horse__piece" />
+					<img
+						class="horse__piece"
+						:class="`horse__piece--${jumping ? 'jump' : mood}`"
+						:src="jumping ? KNIGHT_IMG.jump : KNIGHT_IMG[mood]"
+						alt="knight"
+						draggable="false"
+					/>
 				</div>
-				<span v-if="hopKey > 0" :key="`dust${hopKey}`" class="horse__dust"></span>
+				<img
+					v-if="landKey > 0"
+					:key="`dust${landKey}`"
+					class="horse__dust"
+					:src="cloudImg"
+					alt=""
+				/>
 			</div>
+
 			<div
 				v-for="p in popups"
 				:key="p.id"
 				class="popup"
+				:class="`popup--${p.group}`"
 				:style="getPopupStyle(p.row, p.col)"
 			>
-				<span class="popup__burst"></span>
+				<img class="popup__burst" :src="BURST_IMG[p.group]" alt="" />
 				<span class="popup__text">+{{ p.points }}</span>
 			</div>
+
+			<div v-if="banner" :key="banner.id" class="banner">
+				<span class="banner__word">{{ banner.text }}</span>
+				<span class="banner__mult">×{{ banner.mult }}</span>
+			</div>
+
 			<div
 				v-for="(row, rowInd) in board"
 				:key="rowInd"
@@ -45,20 +73,28 @@
 					:key="colInd"
 					class="table__col"
 					:style="getCellStyle"
+					:data-cell="`${rowInd}:${colInd}`"
 					:class="{
 						'is-dark': (rowInd + colInd) % 2 === 1,
 						active: !isHide && isPossibleMove(rowInd, colInd),
 						is_hole: col.type === BOARD_ITEM.brick,
 						is_visited: !canToBack && col.type === BOARD_ITEM.cell,
+						land: landed === `${rowInd}:${colInd}`,
 					}"
 					@click="move(rowInd, colInd)"
 				>
-					<Transition name="coin">
-						<SweetIcon
+					<Transition name="item">
+						<img
 							v-if="col.type === BOARD_ITEM.pill"
-							class="coin"
-							:class="{ hide: isHide }"
-							:kind="sweets[`${rowInd}:${colInd}`] || 'candy'"
+							class="item"
+							:class="[
+								{ hide: isHide },
+								`item--${itemGroup(itemAt(rowInd, colInd))}`,
+							]"
+							:style="{ animationDelay: `${((rowInd * 3 + colInd) % 8) * -0.25}s` }"
+							:src="ITEM_IMG[itemAt(rowInd, colInd)]"
+							alt=""
+							draggable="false"
 						/>
 					</Transition>
 				</div>
@@ -72,12 +108,40 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
 import { BOARD_ITEM } from '@/game/consts'
 import { TypeBoard } from '@/game/types'
+import {
+	ItemKind,
+	ItemGroup,
+	IBoardPopup,
+	KnightMood,
+	ITEM_IMG,
+	itemGroup,
+} from '@/game/items'
 
 import { useGameSettings } from '@/store/gameSettings'
 
-import KnightPiece from '@/components/KnightPiece.vue'
-import SweetIcon from '@/components/SweetIcon.vue'
-import { SweetKind } from '@/game/sweets'
+import knightHappy from '@/assets/img/game/knight/happy.webp'
+import knightThink from '@/assets/img/game/knight/think.webp'
+import knightJump from '@/assets/img/game/knight/jump.webp'
+import knightCheer from '@/assets/img/game/knight/cheer.webp'
+import cloudImg from '@/assets/img/game/fx/cloud.webp'
+import starburstImg from '@/assets/img/game/fx/starburst.webp'
+import starExplodeImg from '@/assets/img/game/fx/star-explode.webp'
+import coinburstImg from '@/assets/img/game/fx/coinburst.webp'
+
+const KNIGHT_IMG = {
+	happy: knightHappy,
+	think: knightThink,
+	jump: knightJump,
+	cheer: knightCheer,
+}
+
+// Чем ценнее предмет, тем сильнее вспышка
+const BURST_IMG: Record<ItemGroup, string> = {
+	candy: starburstImg,
+	star: starburstImg,
+	crystal: starExplodeImg,
+	crown: coinburstImg,
+}
 
 const $props = withDefaults(
 	defineProps<{
@@ -86,14 +150,18 @@ const $props = withDefaults(
 		horsePos: number[]
 		isHide?: boolean
 		canToBack?: boolean
-		sweets?: Record<string, SweetKind>
-		popups?: { id: number; row: number; col: number; points: number }[]
+		items?: Record<string, ItemKind>
+		popups?: IBoardPopup[]
+		banner?: { id: number; text: string; mult: number } | null
+		mood?: KnightMood
 	}>(),
 	{
 		isHide: false,
 		canToBack: true,
-		sweets: () => ({}),
+		items: () => ({}),
 		popups: () => [],
+		banner: null,
+		mood: 'happy',
 	}
 )
 
@@ -105,12 +173,22 @@ const GAP = 2
 const FRAME_PAD = 6
 const FRAME_BORDER = 5
 const CORNERS = ['tl', 'tr', 'bl', 'br']
+const JUMP_MS = 380
 
 const gameSettings = useGameSettings()
 
 const tableRef = ref<HTMLDivElement | null>(null)
+const horseRef = ref<HTMLDivElement | null>(null)
 const boardWidth = ref(80)
 const hopKey = ref(0)
+const landKey = ref(0)
+const jumping = ref(false)
+const landed = ref<string | null>(null)
+const trail = ref<{ id: number; points: string } | null>(null)
+let timers: ReturnType<typeof setTimeout>[] = []
+
+const itemAt = (row: number, col: number): ItemKind =>
+	$props.items[`${row}:${col}`] || 'candy-pink'
 
 const isPossibleMove = computed(() => (row: number, col: number) => {
 	return (
@@ -137,16 +215,16 @@ const getHorseDefStyle = computed(() => {
 	}
 })
 
-const getHorsePosStyle = computed(() => {
+const cellOffset = (row: number, col: number) => {
 	const step = boardWidth.value + GAP
-	return {
-		transform: `translate(${step * $props.horsePos[1]}px, ${
-			step * $props.horsePos[0]
-		}px)`,
-	}
-})
+	return `translate(${step * col}px, ${step * row}px)`
+}
 
-// «+очки» всплывают над клеткой, где взята сладость
+const getHorsePosStyle = computed(() => ({
+	transform: cellOffset($props.horsePos[0], $props.horsePos[1]),
+}))
+
+// «+очки» всплывают над клеткой, где взят предмет
 const getPopupStyle = computed(() => (row: number, col: number) => {
 	const step = boardWidth.value + GAP
 	return {
@@ -157,13 +235,66 @@ const getPopupStyle = computed(() => (row: number, col: number) => {
 	}
 })
 
-// Каждый ход перезапускает анимацию прыжка: новый key пересоздаёт элемент.
+// Ход конём: сначала длинная сторона «Г», потом короткая — по углу, со следом.
+// flush: 'post' — к этому моменту в DOM уже конечная позиция, а анимация
+// лишь проводит коня к ней через угол.
 watch(
 	() => [$props.horsePos[0], $props.horsePos[1]],
 	(val, old) => {
-		if (old && (val[0] !== old[0] || val[1] !== old[1])) hopKey.value++
-	}
+		if (!old) return
+		const dr = val[0] - old[0]
+		const dc = val[1] - old[1]
+		const isKnightMove =
+			(Math.abs(dr) === 2 && Math.abs(dc) === 1) ||
+			(Math.abs(dr) === 1 && Math.abs(dc) === 2)
+		if (!isKnightMove) return
+
+		const corner =
+			Math.abs(dr) === 2 ? [val[0], old[1]] : [old[0], val[1]]
+		playJump(old, corner, val)
+	},
+	{ flush: 'post' }
 )
+
+function playJump(from: number[], corner: number[], to: number[]) {
+	timers.forEach(clearTimeout)
+	timers = []
+
+	const step = boardWidth.value + GAP
+	const center = (p: number[]) =>
+		`${FRAME_PAD + p[1] * step + boardWidth.value / 2},${
+			FRAME_PAD + p[0] * step + boardWidth.value / 2
+		}`
+	trail.value = {
+		id: Date.now(),
+		points: [from, corner, to].map(center).join(' '),
+	}
+
+	hopKey.value++
+	jumping.value = true
+	horseRef.value?.animate(
+		[
+			{ transform: cellOffset(from[0], from[1]) },
+			{ transform: cellOffset(corner[0], corner[1]), offset: 0.55 },
+			{ transform: cellOffset(to[0], to[1]) },
+		],
+		{ duration: JUMP_MS, easing: 'ease-in-out' }
+	)
+
+	timers.push(
+		setTimeout(() => {
+			jumping.value = false
+			landKey.value++
+			landed.value = null
+			requestAnimationFrame(() => {
+				landed.value = `${to[0]}:${to[1]}`
+			})
+		}, JUMP_MS - 40),
+		setTimeout(() => {
+			trail.value = null
+		}, JUMP_MS + 450)
+	)
+}
 
 onMounted(() => {
 	calculateBoardWidth()
@@ -172,6 +303,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+	timers.forEach(clearTimeout)
 	window.removeEventListener('resize', calculateBoardWidth)
 })
 
@@ -216,7 +348,7 @@ function calculateBoardWidth() {
 		box-shadow: inset 0 0 0 2px #c98a00, 0 0 0 3px #1a1033, 0 7px 0 3px #1a1033;
 	}
 
-	/* Золотые накладки на углах рамки, как в макете */
+	/* Золотые накладки на углах рамки */
 	&__corner {
 		position: absolute;
 		z-index: 60;
@@ -281,6 +413,11 @@ function calculateBoardWidth() {
 			cursor: default;
 		}
 
+		/* Клетка «принимает» коня: короткое приседание */
+		&.land {
+			animation: cell-land 0.28s ease-out;
+		}
+
 		/* Возможный ход: светящаяся голубая клетка в золотой обводке */
 		&.active {
 			&::before {
@@ -308,13 +445,29 @@ function calculateBoardWidth() {
 			}
 		}
 
-		.coin {
+		.item {
 			position: relative;
 			z-index: 15;
-			width: 64%;
-			height: 64%;
+			width: 74%;
+			height: 74%;
+			object-fit: contain;
 			display: block;
 			pointer-events: none;
+			user-select: none;
+			animation: item-bob 2s ease-in-out infinite;
+
+			/* Редкие предметы покачиваются заметнее и светятся */
+			&--crystal,
+			&--crown {
+				filter: drop-shadow(0 0 5px rgba(255, 245, 170, 0.95));
+				animation: item-float 1.6s ease-in-out infinite;
+			}
+
+			/* Предмет «съеден»: подскок и исчезновение, вспышку рисует popup.
+			   Последним в блоке: иначе его перебивают item-bob и item-float. */
+			&.item-leave-active {
+				animation: eat 0.28s ease-in forwards;
+			}
 		}
 	}
 
@@ -322,10 +475,38 @@ function calculateBoardWidth() {
 		opacity: 0;
 	}
 
+	.trail {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 40;
+		pointer-events: none;
+		overflow: visible;
+
+		polyline {
+			fill: none;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+		}
+
+		&__glow {
+			stroke: rgba(255, 230, 120, 0.55);
+			stroke-width: 12;
+		}
+
+		&__line {
+			stroke: #fff6c4;
+			stroke-width: 4;
+			stroke-dasharray: 2 9;
+		}
+
+		animation: trail-fade 0.8s ease-out forwards;
+	}
+
 	.horse {
 		pointer-events: none;
 		position: absolute;
-		transition: transform 0.34s cubic-bezier(0.3, 0.7, 0.4, 1);
 		z-index: 50;
 
 		&__body {
@@ -333,41 +514,41 @@ function calculateBoardWidth() {
 			inset: 0;
 
 			&.hop {
-				animation: hop 0.34s ease-out;
+				animation: hop 0.38s ease-out;
 			}
 		}
 
-		/* Пыль при приземлении */
-		&__dust {
-			position: absolute;
-			left: 15%;
-			right: 15%;
-			bottom: 4%;
-			height: 18%;
-			border-radius: 50%;
-			border: 3px solid rgba(255, 255, 255, 0.85);
-			opacity: 0;
-			animation: dust 0.4s ease-out 0.26s;
-		}
-
-		/* Конь целиком внутри клетки и по её центру */
+		/* Маскот стоит на клетке, голова чуть выше её края */
 		&__piece {
 			position: absolute;
-			height: 90%;
-			width: auto;
-			aspect-ratio: 80 / 118;
+			height: 112%;
 			left: 50%;
-			top: 50%;
-			transform: translate(-50%, -50%);
+			bottom: 3%;
+			transform: translateX(-50%);
 			display: block;
-			filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.45));
+			user-select: none;
+			filter: drop-shadow(0 3px 0 rgba(26, 16, 51, 0.45));
+
+			&--think {
+				animation: think 1.4s ease-in-out infinite;
+			}
+
+			&--cheer {
+				animation: cheer 0.6s ease-in-out infinite;
+			}
+		}
+
+		/* Облачко пыли при приземлении */
+		&__dust {
+			position: absolute;
+			left: 50%;
+			bottom: -12%;
+			width: 95%;
+			transform: translateX(-50%);
+			opacity: 0;
+			animation: dust 0.45s ease-out;
 		}
 	}
-}
-
-/* Сладость съедается: подпрыгивает, крутится и тает */
-.coin-leave-active {
-	animation: eat 0.35s ease-in forwards;
 }
 
 .popup {
@@ -380,10 +561,17 @@ function calculateBoardWidth() {
 
 	&__burst {
 		position: absolute;
-		inset: 10%;
-		border-radius: 50%;
-		border: 4px solid #fff3a6;
-		animation: burst 0.45s ease-out forwards;
+		width: 170%;
+		height: 170%;
+		object-fit: contain;
+		animation: burst 0.5s ease-out forwards;
+	}
+
+	&--crystal &__burst,
+	&--crown &__burst {
+		width: 240%;
+		height: 240%;
+		animation-duration: 0.7s;
 	}
 
 	&__text {
@@ -396,30 +584,69 @@ function calculateBoardWidth() {
 			0 -2px 0 #1a1033, 0 3px 0 #1a1033;
 		animation: float-up 0.9s ease-out forwards;
 	}
+
+	&--crystal &__text,
+	&--crown &__text {
+		color: #ffe14f;
+		font-size: 26px;
+	}
+}
+
+/* Слово серии над доской: Nice! → Great! → Amazing! → Awesome! */
+.banner {
+	position: absolute;
+	z-index: 80;
+	left: 50%;
+	top: 42%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	pointer-events: none;
+	animation: banner 1s ease-out forwards;
+
+	&__word,
+	&__mult {
+		font-weight: 800;
+		color: #fff;
+		white-space: nowrap;
+		text-shadow: 3px 0 0 #1a1033, -3px 0 0 #1a1033, 0 3px 0 #1a1033,
+			0 -3px 0 #1a1033, 2px 2px 0 #1a1033, -2px -2px 0 #1a1033,
+			2px -2px 0 #1a1033, -2px 2px 0 #1a1033, 0 6px 0 #1a1033;
+	}
+
+	&__word {
+		font-size: 44px;
+		color: #ffe14f;
+	}
+
+	&__mult {
+		font-size: 26px;
+		color: #ff7eb6;
+	}
 }
 
 @keyframes eat {
 	0% {
-		transform: scale(1) rotate(0);
+		transform: scale(1);
 		opacity: 1;
 	}
-	35% {
-		transform: scale(1.35) rotate(-12deg);
+	40% {
+		transform: scale(1.25);
 		opacity: 1;
 	}
 	100% {
-		transform: scale(0.2) rotate(25deg);
+		transform: scale(0.3);
 		opacity: 0;
 	}
 }
 
 @keyframes burst {
-	from {
-		transform: scale(0.4);
+	0% {
+		transform: scale(0.3) rotate(0);
 		opacity: 1;
 	}
-	to {
-		transform: scale(1.5);
+	100% {
+		transform: scale(1.1) rotate(25deg);
 		opacity: 0;
 	}
 }
@@ -437,23 +664,87 @@ function calculateBoardWidth() {
 		opacity: 1;
 	}
 	100% {
-		transform: translateY(-110%) scale(1);
+		transform: translateY(-120%) scale(1);
+		opacity: 0;
+	}
+}
+
+@keyframes banner {
+	0% {
+		transform: translate(-50%, -50%) scale(0.3) rotate(-8deg);
+		opacity: 0;
+	}
+	18% {
+		transform: translate(-50%, -50%) scale(1.15) rotate(3deg);
+		opacity: 1;
+	}
+	30% {
+		transform: translate(-50%, -50%) scale(1) rotate(0);
+	}
+	75% {
+		transform: translate(-50%, -60%) scale(1);
+		opacity: 1;
+	}
+	100% {
+		transform: translate(-50%, -80%) scale(0.9);
+		opacity: 0;
+	}
+}
+
+@keyframes trail-fade {
+	0%,
+	55% {
+		opacity: 1;
+	}
+	100% {
 		opacity: 0;
 	}
 }
 
 @keyframes dust {
-	from {
-		transform: scale(0.5);
-		opacity: 0.9;
+	0% {
+		transform: translateX(-50%) scale(0.4);
+		opacity: 0.95;
 	}
-	to {
-		transform: scale(1.4);
+	100% {
+		transform: translateX(-50%) scale(1.2);
 		opacity: 0;
 	}
 }
 
-/* Прыжок: взлёт с наклоном вперёд, приземление с «приседанием» */
+@keyframes cell-land {
+	0% {
+		transform: scale(1);
+	}
+	40% {
+		transform: scale(0.9, 0.86);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+@keyframes item-bob {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-5%);
+	}
+}
+
+@keyframes item-float {
+	0%,
+	100% {
+		transform: translateY(0) rotate(-4deg) scale(1);
+	}
+	50% {
+		transform: translateY(-9%) rotate(4deg) scale(1.06);
+	}
+}
+
+/* Прыжок: присед, взлёт с наклоном, приземление с «приседанием» */
 @keyframes hop {
 	0% {
 		transform: translateY(0) scale(1);
@@ -462,13 +753,33 @@ function calculateBoardWidth() {
 		transform: translateY(0) scale(1.08, 0.88);
 	}
 	50% {
-		transform: translateY(-55%) scale(0.95, 1.08) rotate(-8deg);
+		transform: translateY(-50%) scale(0.95, 1.08) rotate(-8deg);
 	}
-	82% {
+	84% {
 		transform: translateY(0) scale(1.12, 0.86);
 	}
 	100% {
 		transform: translateY(0) scale(1);
+	}
+}
+
+@keyframes think {
+	0%,
+	100% {
+		transform: translateX(-50%) rotate(0);
+	}
+	50% {
+		transform: translateX(-50%) rotate(-5deg);
+	}
+}
+
+@keyframes cheer {
+	0%,
+	100% {
+		transform: translateX(-50%) translateY(0);
+	}
+	50% {
+		transform: translateX(-50%) translateY(-10%);
 	}
 }
 

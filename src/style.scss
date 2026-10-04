@@ -130,3 +130,11 @@ button {
 	// -webkit-background-clip: text;
 	// -webkit-text-fill-color: transparent;
 }
+
+/* Предмет, летящий из клетки к счёту (создаётся из PlaygroundPage) */
+.flying-item {
+	position: fixed;
+	z-index: 2000;
+	pointer-events: none;
+	object-fit: contain;
+}
