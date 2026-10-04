@@ -1,5 +1,6 @@
 import { BOARD_ITEM } from './consts'
 import { TypeBoard } from './types'
+import { seededRandom } from './sweets'
 
 const KNIGHT_STEPS = [
 	[1, 2],
@@ -13,16 +14,6 @@ const KNIGHT_STEPS = [
 ]
 
 const RUNS = 40
-
-// Детерминированный ГСЧ: норма уровня не должна меняться между запусками.
-function mulberry32(seed: number) {
-	return () => {
-		seed = (seed + 0x6d2b79f5) | 0
-		let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
-		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-		return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-	}
-}
 
 /**
  * Норма ходов для режима Classic: длина лучшего из нескольких жадных
@@ -50,7 +41,7 @@ export function calcMovesPar(
 	)
 	if (!coins.length) return 0
 
-	const rand = mulberry32(seed)
+	const rand = seededRandom(seed)
 	let best: number | null = null
 
 	for (let run = 0; run < RUNS; run++) {

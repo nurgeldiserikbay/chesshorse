@@ -14,6 +14,14 @@ import { TypeBoard } from '@/game/types'
 import { Game } from '@/game/game'
 import { BOARD_ITEM } from '@/game/consts'
 import { calcMovesPar, starThresholds, starsForMoves } from '@/game/par'
+import {
+	SweetKind,
+	SWEET_POINTS,
+	MAX_COMBO,
+	pickSweet,
+	seededRandom,
+	cellKey,
+} from '@/game/sweets'
 
 import { LEVELS, GAME_TYPES } from '@/utils/conts'
 import { copyArray } from '@/utils/helpers'
@@ -32,7 +40,7 @@ import OtherGames from '@/components/OtherGames.vue'
 
 import Admob from '@/utils/admob'
 
-import CoinIcon from '@/components/CoinIcon.vue'
+import SweetIcon from '@/components/SweetIcon.vue'
 import starFullImg from '@/assets/img/game/star-full.webp'
 import starEmptyImg from '@/assets/img/game/star-empty.webp'
 
@@ -54,6 +62,34 @@ const board = reactive<{ value: TypeBoard | null }>({
 const horsePos = ref([0, 0])
 const totalCoins = ref(0)
 const movesPar = ref<number | null>(null)
+
+// Сладости на клетках, очки и серия. Раскладка уровня детерминирована.
+const sweets = ref<Record<string, SweetKind>>({})
+const score = ref(0)
+const combo = ref(0)
+const popups = ref<
+	{ id: number; row: number; col: number; points: number; combo: number }[]
+>([])
+let popupId = 0
+
+// Счёт на панели «докручивается» до настоящего, а не прыгает.
+const shownScore = ref(0)
+let scoreRaf = 0
+watch(score, (to) => {
+	cancelAnimationFrame(scoreRaf)
+	const from = shownScore.value
+	if (to <= from) {
+		shownScore.value = to
+		return
+	}
+	const startAt = performance.now()
+	const step = (now: number) => {
+		const t = Math.min(1, (now - startAt) / 400)
+		shownScore.value = Math.round(from + (to - from) * t)
+		if (t < 1) scoreRaf = requestAnimationFrame(step)
+	}
+	scoreRaf = requestAnimationFrame(step)
+})
 
 const pillCounts = computed(() => {
 	return game.value?.board?.board?.reduce((acc, r) => {
@@ -163,6 +199,7 @@ function move({ row, col }: { row: number; col: number }) {
 	const isMoved = game.value?.move(row, col, !isSecondType.value)
 
 	if (isMoved) {
+		collectSweet(row, col, is_coin)
 		board.value = game.value?.board?.board?.map((r) => r) || []
 		horsePos.value = [...(game.value?.horses[0]?.currentPos || [0, 0])]
 		updatePossibleMoves()
@@ -178,6 +215,7 @@ function move({ row, col }: { row: number; col: number }) {
 					if (!game.value) return
 					game.value.board.setCoin()
 					board.value = game.value?.board?.board
+					assignNewSweets()
 					updateGameStat.value(['moves'], {
 						moves: curGameStat.value.moves + 1,
 					})
@@ -212,11 +250,51 @@ function initGame() {
 
 	if (isThirdType.value) game.value.board.setCoin()
 
+	sweets.value = {}
+	score.value = 0
+	shownScore.value = 0
+	combo.value = 0
+	popups.value = []
+	assignNewSweets(seededRandom((currentLevel.value || 0) + 1))
+
 	totalCoins.value = pillCounts.value || 0
 	movesPar.value = isFirstType.value
 		? calcMovesPar(boardInit, horsePos.value, (currentLevel.value || 0) + 1)
 		: null
 	updatePossibleMoves()
+}
+
+function collectSweet(row: number, col: number, isSweet: boolean) {
+	if (!isSweet) {
+		combo.value = 0
+		return
+	}
+	combo.value = Math.min(combo.value + 1, MAX_COMBO)
+	const points = SWEET_POINTS[sweets.value[cellKey(row, col)] || 'candy']
+	const gained = points * combo.value
+	score.value += gained
+	updateGameStat.value(['score'], { score: score.value })
+
+	const id = ++popupId
+	popups.value.push({ id, row, col, points: gained, combo: combo.value })
+	setTimeout(() => {
+		popups.value = popups.value.filter((p) => p.id !== id)
+	}, 900)
+}
+
+// Сладость каждой клетке с монетой, у которой её ещё нет: на старте уровня —
+// по сиду уровня, в Time Attack — случайно для каждой новой.
+function assignNewSweets(rand: () => number = Math.random) {
+	board.value?.forEach((r, ri) =>
+		r.forEach((c, ci) => {
+			const key = cellKey(ri, ci)
+			if (c.type === BOARD_ITEM.pill && !sweets.value[key]) {
+				sweets.value[key] = pickSweet(rand)
+			} else if (c.type !== BOARD_ITEM.pill && sweets.value[key]) {
+				delete sweets.value[key]
+			}
+		})
+	)
 }
 
 function clearBoard(board: TypeBoard) {
@@ -269,17 +347,20 @@ function timeend() {
 			:possibleMoves="possibleMoves"
 			:horsePos="horsePos"
 			:canToBack="!isSecondType"
+			:sweets="sweets"
+			:popups="popups"
 			@move="move"
 		/>
-		<div
-			v-if="!adsStore.loading && board.value && !isThirdType"
-			class="coins-panel"
-		>
-			<CoinIcon class="coins-panel__coin" />
+		<div v-if="!adsStore.loading && board.value" class="coins-panel">
+			<SweetIcon class="coins-panel__coin" kind="cupcake" />
+			<span v-if="combo > 1" :key="combo" class="coins-panel__combo"
+				>Combo ×{{ combo }}</span
+			>
 			<div class="coins-panel__body">
 				<div class="coins-panel__top">
 					<div class="coins-panel__label">
-						Coins left: <b>{{ pillCounts }}</b>
+						Score
+						<b :key="score" class="coins-panel__score">{{ shownScore }}</b>
 					</div>
 					<div v-if="movesPar !== null" class="coins-panel__stars">
 						<img
@@ -293,11 +374,14 @@ function timeend() {
 						>
 					</div>
 				</div>
-				<div class="coins-panel__bar">
-					<div
-						class="coins-panel__fill"
-						:style="{ width: `${coinsProgress}%` }"
-					></div>
+				<div v-if="!isThirdType" class="coins-panel__progress">
+					<div class="coins-panel__bar">
+						<div
+							class="coins-panel__fill"
+							:style="{ width: `${coinsProgress}%` }"
+						></div>
+					</div>
+					<span class="coins-panel__left">{{ pillCounts }} left</span>
 				</div>
 			</div>
 		</div>
@@ -361,6 +445,7 @@ function timeend() {
 		border: 4px solid #fecb23;
 		border-radius: 16px;
 		box-shadow: inset 0 0 0 2px #fff, 0 0 0 3px #1a1033, 0 6px 0 3px #1a1033;
+		position: relative;
 
 		&__coin {
 			width: 52px;
@@ -384,16 +469,51 @@ function timeend() {
 		}
 
 		&__label {
+			display: flex;
+			align-items: center;
+			gap: 6px;
 			color: #2a2457;
 			font-weight: 800;
-			font-size: 17px;
+			font-size: 15px;
 			white-space: nowrap;
+		}
 
-			b {
-				color: #f5a400;
-				font-size: 22px;
-				-webkit-text-stroke: 1px #1a1033;
-			}
+		/* :key на счёте перезапускает «подпрыгивание» при каждом начислении */
+		&__score {
+			display: inline-block;
+			min-width: 52px;
+			color: #f5a400;
+			font-size: 24px;
+			-webkit-text-stroke: 1px #1a1033;
+			font-variant-numeric: tabular-nums;
+			animation: bump 0.3s ease-out;
+		}
+
+		/* Серия висит над панелью, чтобы не теснить строку счёта */
+		&__combo {
+			position: absolute;
+			top: -16px;
+			left: 14px;
+			padding: 1px 10px;
+			border: 2px solid #1a1033;
+			border-radius: 999px;
+			background: #ff4f93;
+			color: #fff;
+			font-size: 14px;
+			animation: bump 0.3s ease-out;
+		}
+
+		&__progress {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		&__left {
+			flex: none;
+			color: #5b5788;
+			font-size: 13px;
+			font-weight: 800;
 		}
 
 		&__stars {
@@ -420,6 +540,7 @@ function timeend() {
 		}
 
 		&__bar {
+			flex: 1 1 auto;
 			height: 14px;
 			border-radius: 8px;
 			background: #6d84a6;
@@ -489,6 +610,18 @@ function timeend() {
 				animation-delay: 1s;
 			}
 		}
+	}
+}
+
+@keyframes bump {
+	0% {
+		transform: scale(1);
+	}
+	40% {
+		transform: scale(1.3);
+	}
+	100% {
+		transform: scale(1);
 	}
 }
 

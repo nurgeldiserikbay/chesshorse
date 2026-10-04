@@ -13,7 +13,7 @@
 		</div>
 		<div class="score-table__move">
 			<span v-if="isFirstType">Moves:</span>
-			<span v-else>Pills:</span>
+			<span v-else>Sweets:</span>
 			<span v-if="gameStore.curGameStat" class="score-table__move--value">{{
 				gameStore.curGameStat.moves
 			}}</span>

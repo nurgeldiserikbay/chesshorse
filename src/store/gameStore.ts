@@ -8,6 +8,7 @@ export interface IGameStat {
 	time: string
 	moves: number
 	date: string
+	score?: number
 }
 
 export type IGameStats = {
@@ -21,6 +22,7 @@ export const useGameStore = defineStore('GameStore', () => {
 		time: '',
 		moves: 0,
 		date: '',
+		score: 0,
 	})
 	const gameStats = ref<IGameStats>({
 		[GAME_TYPES.COLLECT_ALL]: {},
@@ -59,6 +61,7 @@ export const useGameStore = defineStore('GameStore', () => {
 			time: '',
 			moves: 0,
 			date: '',
+			score: 0,
 		}
 	}
 

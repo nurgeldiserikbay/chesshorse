@@ -11,7 +11,7 @@
 				alt=""
 			/>
 		</div>
-		<CoinIcon v-else class="result-table__coin" />
+		<SweetIcon v-else class="result-table__coin" kind="cupcake" />
 		<div class="result-table__body">
 			<div class="result-table__values">
 				<div v-if="showTime" class="result-table__time">
@@ -20,10 +20,14 @@
 				</div>
 				<div class="result-table__move">
 					<span v-if="showTime">Moves</span>
-					<span v-else>Coins</span>
+					<span v-else>Sweets</span>
 					<span v-if="gameStore.curGameStat">{{
 						gameStore.curGameStat.moves
 					}}</span>
+				</div>
+				<div class="result-table__move">
+					<span>Score</span>
+					<span>{{ gameStore.curGameStat?.score || 0 }}</span>
 				</div>
 				<div v-if="goal !== null" class="result-table__goal">
 					<img :src="starFullImg" alt="" />×3 — no more than {{ goal }} moves
@@ -56,7 +60,7 @@ import { PAGES } from '@/utils/conts'
 import IconMenu from '@/assets/img/menu.svg'
 import IconReload from '@/assets/img/reload.svg'
 import IconNext from '@/assets/img/next.svg'
-import CoinIcon from '@/components/CoinIcon.vue'
+import SweetIcon from '@/components/SweetIcon.vue'
 import starFullImg from '@/assets/img/game/star-full.webp'
 import starEmptyImg from '@/assets/img/game/star-empty.webp'
 

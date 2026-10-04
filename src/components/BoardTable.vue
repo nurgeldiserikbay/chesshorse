@@ -23,6 +23,16 @@
 				<div :key="hopKey" class="horse__body" :class="{ hop: hopKey > 0 }">
 					<KnightPiece class="horse__piece" />
 				</div>
+				<span v-if="hopKey > 0" :key="`dust${hopKey}`" class="horse__dust"></span>
+			</div>
+			<div
+				v-for="p in popups"
+				:key="p.id"
+				class="popup"
+				:style="getPopupStyle(p.row, p.col)"
+			>
+				<span class="popup__burst"></span>
+				<span class="popup__text">+{{ p.points }}</span>
 			</div>
 			<div
 				v-for="(row, rowInd) in board"
@@ -44,10 +54,11 @@
 					@click="move(rowInd, colInd)"
 				>
 					<Transition name="coin">
-						<CoinIcon
+						<SweetIcon
 							v-if="col.type === BOARD_ITEM.pill"
 							class="coin"
 							:class="{ hide: isHide }"
+							:kind="sweets[`${rowInd}:${colInd}`] || 'candy'"
 						/>
 					</Transition>
 				</div>
@@ -65,7 +76,8 @@ import { TypeBoard } from '@/game/types'
 import { useGameSettings } from '@/store/gameSettings'
 
 import KnightPiece from '@/components/KnightPiece.vue'
-import CoinIcon from '@/components/CoinIcon.vue'
+import SweetIcon from '@/components/SweetIcon.vue'
+import { SweetKind } from '@/game/sweets'
 
 const $props = withDefaults(
 	defineProps<{
@@ -74,10 +86,14 @@ const $props = withDefaults(
 		horsePos: number[]
 		isHide?: boolean
 		canToBack?: boolean
+		sweets?: Record<string, SweetKind>
+		popups?: { id: number; row: number; col: number; points: number }[]
 	}>(),
 	{
 		isHide: false,
 		canToBack: true,
+		sweets: () => ({}),
+		popups: () => [],
 	}
 )
 
@@ -127,6 +143,17 @@ const getHorsePosStyle = computed(() => {
 		transform: `translate(${step * $props.horsePos[1]}px, ${
 			step * $props.horsePos[0]
 		}px)`,
+	}
+})
+
+// «+очки» всплывают над клеткой, где взята сладость
+const getPopupStyle = computed(() => (row: number, col: number) => {
+	const step = boardWidth.value + GAP
+	return {
+		width: `${boardWidth.value}px`,
+		height: `${boardWidth.value}px`,
+		left: `${FRAME_PAD + col * step}px`,
+		top: `${FRAME_PAD + row * step}px`,
 	}
 })
 
@@ -298,7 +325,7 @@ function calculateBoardWidth() {
 	.horse {
 		pointer-events: none;
 		position: absolute;
-		transition: transform 0.3s ease-out;
+		transition: transform 0.34s cubic-bezier(0.3, 0.7, 0.4, 1);
 		z-index: 50;
 
 		&__body {
@@ -306,43 +333,139 @@ function calculateBoardWidth() {
 			inset: 0;
 
 			&.hop {
-				animation: hop 0.3s ease-out;
+				animation: hop 0.34s ease-out;
 			}
 		}
 
-		/* Конь стоит основанием в нижней части клетки, голова выходит выше */
+		/* Пыль при приземлении */
+		&__dust {
+			position: absolute;
+			left: 15%;
+			right: 15%;
+			bottom: 4%;
+			height: 18%;
+			border-radius: 50%;
+			border: 3px solid rgba(255, 255, 255, 0.85);
+			opacity: 0;
+			animation: dust 0.4s ease-out 0.26s;
+		}
+
+		/* Конь целиком внутри клетки и по её центру */
 		&__piece {
 			position: absolute;
-			height: 118%;
+			height: 90%;
 			width: auto;
-			aspect-ratio: 100 / 120;
+			aspect-ratio: 80 / 118;
 			left: 50%;
-			bottom: 8%;
-			transform: translateX(-50%);
+			top: 50%;
+			transform: translate(-50%, -50%);
 			display: block;
 			filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.45));
 		}
 	}
 }
 
+/* Сладость съедается: подпрыгивает, крутится и тает */
 .coin-leave-active {
-	transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+	animation: eat 0.35s ease-in forwards;
 }
 
-.coin-leave-to {
-	transform: translateY(-40%) scale(1.5);
-	opacity: 0;
+.popup {
+	position: absolute;
+	z-index: 70;
+	pointer-events: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	&__burst {
+		position: absolute;
+		inset: 10%;
+		border-radius: 50%;
+		border: 4px solid #fff3a6;
+		animation: burst 0.45s ease-out forwards;
+	}
+
+	&__text {
+		position: relative;
+		color: #fff;
+		font-weight: 800;
+		font-size: 20px;
+		white-space: nowrap;
+		text-shadow: 2px 0 0 #1a1033, -2px 0 0 #1a1033, 0 2px 0 #1a1033,
+			0 -2px 0 #1a1033, 0 3px 0 #1a1033;
+		animation: float-up 0.9s ease-out forwards;
+	}
 }
 
+@keyframes eat {
+	0% {
+		transform: scale(1) rotate(0);
+		opacity: 1;
+	}
+	35% {
+		transform: scale(1.35) rotate(-12deg);
+		opacity: 1;
+	}
+	100% {
+		transform: scale(0.2) rotate(25deg);
+		opacity: 0;
+	}
+}
+
+@keyframes burst {
+	from {
+		transform: scale(0.4);
+		opacity: 1;
+	}
+	to {
+		transform: scale(1.5);
+		opacity: 0;
+	}
+}
+
+@keyframes float-up {
+	0% {
+		transform: translateY(0) scale(0.6);
+		opacity: 0;
+	}
+	20% {
+		transform: translateY(-20%) scale(1.15);
+		opacity: 1;
+	}
+	70% {
+		opacity: 1;
+	}
+	100% {
+		transform: translateY(-110%) scale(1);
+		opacity: 0;
+	}
+}
+
+@keyframes dust {
+	from {
+		transform: scale(0.5);
+		opacity: 0.9;
+	}
+	to {
+		transform: scale(1.4);
+		opacity: 0;
+	}
+}
+
+/* Прыжок: взлёт с наклоном вперёд, приземление с «приседанием» */
 @keyframes hop {
 	0% {
 		transform: translateY(0) scale(1);
 	}
-	45% {
-		transform: translateY(-30%) scale(1.08);
+	15% {
+		transform: translateY(0) scale(1.08, 0.88);
 	}
-	80% {
-		transform: translateY(0) scale(1, 0.92);
+	50% {
+		transform: translateY(-55%) scale(0.95, 1.08) rotate(-8deg);
+	}
+	82% {
+		transform: translateY(0) scale(1.12, 0.86);
 	}
 	100% {
 		transform: translateY(0) scale(1);
