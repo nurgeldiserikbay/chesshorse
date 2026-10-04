@@ -18,26 +18,27 @@ function click() {
 
 <style lang="scss" scoped>
 .back-btn {
-	width: 46px;
-	height: 46px;
-	border: none;
-	border-radius: 12px;
-	background: #1d1036;
+	width: 52px;
+	height: 52px;
+	flex: none;
+	border: 3px solid #1a1033;
+	border-radius: 14px;
+	background: linear-gradient(180deg, #7c5ff0 0%, #5a3cc8 100%);
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	cursor: pointer;
-	box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.6),
-		-4px -4px 10px rgba(255, 255, 255, 0.05),
-		inset 0 2px 0 0 rgba(255, 255, 255, 0.1),
-		inset 0 -2px 0 0 rgba(0, 0, 0, 0.1);
+	box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.25), 0 4px 0 #1a1033;
 	transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .back-btn:hover {
 	transform: scale(1.05);
-	box-shadow: 0 0 12px rgba(255, 213, 79, 0.8), 4px 4px 12px rgba(0, 0, 0, 0.5),
-		-4px -4px 12px rgba(255, 255, 255, 0.05);
+}
+
+.back-btn:active {
+	transform: translateY(2px);
+	box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.25), 0 2px 0 #1a1033;
 }
 
 .arrow-icon {

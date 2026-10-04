@@ -11,10 +11,20 @@ import { usePageStore } from '@/store/pageStore'
 import { useGameStore } from '@/store/gameStore'
 
 const { routeTo } = usePageStore()
-const { gameType, gameStats, selectLevel } = useGameStore()
+const gameStore = useGameStore()
+
+// Без деструктуризации: она снимает снимок стора, и загруженная позже
+// статистика на экран уровней уже не попадала.
+const gameType = computed(() => gameStore.gameType)
+const levelStat = computed(
+	() => (level: number) =>
+		gameType.value ? gameStore.gameStats[gameType.value]?.[level] : undefined
+)
 
 const isLevelActive = computed(() => (level: number) => {
-	return level === 0 || gameStats[GAME_TYPES.COLLECT_ALL][level - 1]
+	return (
+		level === 0 || !!gameStore.gameStats[GAME_TYPES.COLLECT_ALL]?.[level - 1]
+	)
 })
 
 const modalActive = ref(false)
@@ -28,7 +38,7 @@ function clickLevel(levelInd: number) {
 			modalActive.value = false
 		}, 1500)
 	} else {
-		selectLevel(levelInd)
+		gameStore.selectLevel(levelInd)
 		routeTo(PAGES.PLAYGROUND)
 	}
 }
@@ -60,21 +70,15 @@ onBeforeUnmount(() => {
 					<!-- <img :src="`./img/levels/${level.img}.png`" alt="" /> -->
 				</div>
 				<IconLock v-if="!isLevelActive(level.level)" class="level__icon" />
-				<div
-					v-else-if="gameType && gameStats[gameType][level.level]"
-					class="level__info"
-				>
-					<div
-						v-if="gameType && gameStats[gameType][level.level]"
-						class="level__stat"
-					>
+				<div v-else-if="levelStat(level.level)" class="level__info">
+					<div class="level__stat">
 						<span
 							v-if="gameType === GAME_TYPES.COLLECT_ALL"
 							class="level__row level__row--small"
-							><span>{{ gameStats[gameType][level.level].time }}</span></span
+							><span>{{ levelStat(level.level)?.time }}</span></span
 						>
 						<span class="level__row level__row--small">
-							<span>&#9679 {{ gameStats[gameType][level.level].moves }}</span></span
+							<span>&#9679 {{ levelStat(level.level)?.moves }}</span></span
 						>
 					</div>
 				</div>
@@ -134,50 +138,40 @@ onBeforeUnmount(() => {
 	.level {
 		position: relative;
 		width: 104px;
-		border-radius: 10px;
+		border-radius: 14px;
 		box-sizing: border-box;
-		background: linear-gradient(180deg, var(--tile-1), var(--tile-2));
-		box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.55),
-			inset -2px -2px 4px rgba(255, 255, 255, 0.05),
-			4px 4px 30px rgba(0, 0, 0, 0.6);
+		box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.45), 0 5px 0 #1a1033;
 		transition: transform 0.12s ease, box-shadow 0.12s ease,
 			background 0.12s ease;
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
 		align-items: center;
-		background: #0f0826;
-		border: 2px solid #1c0f37;
+		/* Открытый уровень — светлая плитка доски, закрытый — тёмная */
+		background: linear-gradient(180deg, #c3cbfa 0%, #8f9cf0 100%);
+		border: 3px solid #1a1033;
 		height: 124px;
 		padding: 0;
+		overflow: hidden;
 
 		&:hover {
-			transform: translateY(-1px);
-			box-shadow:
-				0 0 4px #ffcc33,
-				0 0 5px rgba(255, 204, 51, 0.9),
-				0 0 10px rgba(255, 204, 51, 0.7);
-			border: 2px solid #ffcc33;
+			transform: translateY(-2px);
+		}
+
+		&:active {
+			transform: translateY(3px);
+			box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.45), 0 2px 0 #1a1033;
 		}
 
 		&--disaled {
 			cursor: auto;
-		}
+			background: linear-gradient(180deg, #5a6cc8 0%, #3a4a9e 100%);
+			box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.15), 0 5px 0 #1a1033;
 
-		&:after {
-			content: '';
-			position: absolute;
-			left: 0;
-			top: 0;
-			bottom: 0;
-			right: 0;
-			z-index: -1;
-			background: rgba(0, 0, 0, 0.8);
-			opacity: 0;
-		}
-
-		&--disaled:after {
-			opacity: 1;
+			&:hover,
+			&:active {
+				transform: none;
+			}
 		}
 
 		&__img {
@@ -195,26 +189,22 @@ onBeforeUnmount(() => {
 		}
 
 		&__icon {
-			width: 24px;
-			height: 24px;
-			margin-bottom: 24px;
+			width: 26px;
+			height: 26px;
+			margin-bottom: 22px;
+			filter: brightness(0) invert(0.85) sepia(0.3) hue-rotate(190deg);
 		}
 
 		&__info {
 			display: flex;
 			flex-direction: column;
 			align-items: center;
-			width: 96%;
-			margin: 0 2px 2px;
+			width: 100%;
 			box-sizing: border-box;
-			background: #231618;
-			border: 2px solid #362528;
-			color: #fff;
+			background: #fcf3e5;
+			border-top: 3px solid #1a1033;
+			color: #2a2457;
 			padding: 5px 0;
-			border-top-left-radius: 6px;
-			border-top-right-radius: 6px;
-			border-bottom-left-radius: 10px;
-			border-bottom-right-radius: 10px;
 			white-space: no-wrap;
 			overflow: hidden;
 			font-weight: 600;
@@ -236,7 +226,7 @@ onBeforeUnmount(() => {
 
 				span {
 					&:last-child {
-						color: #fecb23;
+						color: #2a2457;
 					}
 				}
 			}
@@ -245,9 +235,11 @@ onBeforeUnmount(() => {
 				width: 100%;
 				font-size: 32px;
 				text-align: center;
-				color: #fecb23;
+				font-weight: 800;
+				color: #fff;
 				display: none;
-				text-shadow: #aa1e05 0 0 25px;
+				text-shadow: 2px 0 0 #1a1033, -2px 0 0 #1a1033, 0 2px 0 #1a1033,
+					0 -2px 0 #1a1033, 0 4px 0 #1a1033;
 			}
 		}
 

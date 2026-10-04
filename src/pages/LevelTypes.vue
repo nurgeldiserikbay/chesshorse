@@ -91,8 +91,8 @@ function clickOnType(type: GAME_TYPE) {
 		align-items: center;
 		text-align: center;
 		outline: none;
-		box-shadow: inset 0 0 8px 0 rgba(255, 255, 255, 0.5),
-			0 5px 15px 0 rgba(0, 0, 0, 0.5);
+		text-shadow: 0 2px 0 rgba(26, 16, 51, 0.6);
+		box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.35), 0 5px 0 #1a1033;
 		white-space: nowrap;
 		letter-spacing: 2px;
 		line-height: 1;
@@ -100,7 +100,7 @@ function clickOnType(type: GAME_TYPE) {
 	}
 
 	&:nth-child(1) &__title {
-		border: 2px solid #ffffff55;
+		border: 3px solid #1a1033;
 		background: #c10202;
 		background: linear-gradient(
 			25deg,
@@ -111,7 +111,7 @@ function clickOnType(type: GAME_TYPE) {
 	}
 
 	&:nth-child(2) &__title {
-		border: 2px solid #ffffff55;
+		border: 3px solid #1a1033;
 		background: #00c72b;
 		background: linear-gradient(
 			20deg,
@@ -122,7 +122,7 @@ function clickOnType(type: GAME_TYPE) {
 	}
 
 	&:nth-child(3) &__title {
-		border: 2px solid #ffffff55;
+		border: 3px solid #1a1033;
 		background: #192363;
 		background: linear-gradient(
 			35deg,
@@ -133,14 +133,20 @@ function clickOnType(type: GAME_TYPE) {
 	}
 
 	&__desc {
+		/* Светлая карточка, как нижняя панель игрового экрана */
 		width: 100%;
-		background: rgba(0, 0, 0, 0.3);
-		padding: 15px 18px;
+		box-sizing: border-box;
+		background: #fcf3e5;
+		border: 3px solid #fecb23;
+		border-radius: 14px;
+		box-shadow: 0 0 0 3px #1a1033, 0 5px 0 3px #1a1033;
+		padding: 12px 16px;
 		text-align: center;
-		line-height: 1.2;
+		line-height: 1.3;
 		font-size: 14px;
-		font-weight: 300;
-		color: #ffffffef;
+		font-weight: 700;
+		letter-spacing: 1px;
+		color: #2a2457;
 	}
 }
 </style>

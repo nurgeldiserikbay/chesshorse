@@ -122,30 +122,27 @@ const isActive = ref(false)
 	flex-shrink: 0;
 
 	&__btn {
-		width: 46px;
-		height: 46px;
-		border: none;
-		border-radius: 12px;
-		background: #1d1036;
+		width: 52px;
+		height: 52px;
+		padding: 0;
+		border: 3px solid #1a1033;
+		border-radius: 14px;
+		background: linear-gradient(180deg, #7c5ff0 0%, #5a3cc8 100%);
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		cursor: pointer;
-		box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.6),
-			-4px -4px 10px rgba(255, 255, 255, 0.05),
-			inset 0 2px 0 0 rgba(255, 255, 255, 0.1),
-			inset 0 -2px 0 0 rgba(0, 0, 0, 0.1);
-		cursor: pointer;
+		box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.25), 0 4px 0 #1a1033;
+
+		&:active {
+			transform: translateY(2px);
+			box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.25), 0 2px 0 #1a1033;
+		}
 
 		svg {
 			fill: #fecb23;
-			width: 35px;
-			height: 35px;
-
-			@media screen and (max-width: 780px) {
-				width: 25px;
-				height: 25px;
-			}
+			width: 30px;
+			height: 30px;
 		}
 	}
 

@@ -48,8 +48,7 @@ body {
 	margin: 0;
 	font-family: 'NotoSans', sans-serif;
 	letter-spacing: 2px;
-	background-color: #000d2e;
-	box-shadow: 0px 0px 10px 3px #000d2e inset;
+	background-color: #1c9dfd;
 }
 
 #app {
@@ -64,10 +63,6 @@ body {
 	justify-content: flex-start;
 	align-items: stretch;
 	overflow: hidden;
-	background: url('@/assets/img/bg-img.png');
-	background-repeat: no-repeat;
-	background-position: 0%;
-	background-blend-mode: hard-light;
 }
 
 .page {

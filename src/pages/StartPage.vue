@@ -78,8 +78,11 @@ const isOtherGames = ref(false)
 		line-height: 1.2;
 		font-size: 38px;
 		letter-spacing: 4px;
-		color: #f5f5dc;
-		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+		color: #fff;
+		/* Жёсткая тёмная обводка: на светлой долине иначе не читается */
+		text-shadow: 3px 0 0 #1a1033, -3px 0 0 #1a1033, 0 3px 0 #1a1033,
+			0 -3px 0 #1a1033, 2px 2px 0 #1a1033, -2px -2px 0 #1a1033,
+			2px -2px 0 #1a1033, -2px 2px 0 #1a1033, 0 6px 0 #1a1033;
 
 		img {
 			width: 100%;
@@ -109,24 +112,21 @@ const isOtherGames = ref(false)
 		font-weight: 800;
 		color: #1e1a3a;
 		cursor: pointer;
-		box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.8),
-			inset 0 -4px 6px 0 rgba(0, 0, 0, 0.5),
-			inset 0 4px 6px 0 rgba(255, 255, 255, 0.4);
+		border: 4px solid #1a1033;
+		box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.45),
+			inset 0 -4px 0 rgba(0, 0, 0, 0.2), 0 6px 0 #1a1033;
 		transition: transform 0.15s, box-shadow 0.15s;
 		text-transform: uppercase;
 		letter-spacing: 2px;
 
 		&:hover {
 			transform: scale(1.05);
-			box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5),
-				inset 0 -4px 6px rgba(0, 0, 0, 0.3),
-				inset 0 4px 6px rgba(255, 255, 255, 0.25);
 		}
 
 		&:active {
-			transform: scale(0.97);
-			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5),
-				inset 0 2px 4px rgba(0, 0, 0, 0.4);
+			transform: translateY(4px);
+			box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.45),
+				inset 0 -4px 0 rgba(0, 0, 0, 0.2), 0 2px 0 #1a1033;
 		}
 	}
 
@@ -134,10 +134,14 @@ const isOtherGames = ref(false)
 		margin-bottom: 85px;
 
 		a {
+			display: inline-block;
+			padding: 6px 18px;
+			border-radius: 999px;
+			background: rgba(26, 16, 51, 0.72);
 			color: #fff;
 			text-decoration: none;
-			font-size: 20px;
-			font-weight: 500;
+			font-size: 18px;
+			font-weight: 700;
 
 			&:visited,
 			&:active {

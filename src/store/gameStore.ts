@@ -92,9 +92,25 @@ export const useGameStore = defineStore('GameStore', () => {
 	async function loadData() {
 		const ret = await Preferences.get({ key: 'gameStats' })
 
-		if (ret.value) {
-			gameStats.value = JSON.parse(ret.value) as IGameStats
+		if (!ret.value) return
+
+		// В браузере игры с одного localhost делят хранилище, и 02/07 пишут
+		// свой «gameStats» другого вида. Берём только наши режимы-объекты.
+		let parsed: unknown
+		try {
+			parsed = JSON.parse(ret.value)
+		} catch {
+			return
 		}
+		if (!parsed || typeof parsed !== 'object') return
+
+		const stats = parsed as Record<string, unknown>
+		Object.values(GAME_TYPES).forEach((type) => {
+			const value = stats[type]
+			if (value && typeof value === 'object' && !Array.isArray(value)) {
+				gameStats.value[type] = value as IGameStats[string]
+			}
+		})
 	}
 
 	return {

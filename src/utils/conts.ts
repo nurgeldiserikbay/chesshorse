@@ -1,4 +1,5 @@
 import levels from './levels'
+import bgValley from '@/assets/img/game/bg-valley.webp'
 
 export type GAME_TYPE = 'COLLECT_ALL' | 'NO_WAY_BACK' | 'BY_TIME'
 
@@ -24,7 +25,9 @@ export const GAME_SETTINGS = [
 		id: 0,
 		board1: '#2C235C',
 		board2: '#2C235C',
-		bodyBg: '#000d2e',
+		// Сказочная долина из макета; цвет под картинкой — небо, на случай
+		// пока она грузится.
+		bodyBg: `#1c9dfd url(${bgValley}) center / cover no-repeat`,
 		boardBorder: 'linear-gradient(135deg, #000d2e 0%, #000d2e 100%)',
 		horse: 'horse-1',
 		board: 'board-1',

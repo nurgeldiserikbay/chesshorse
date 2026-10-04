@@ -1,6 +1,14 @@
 <template>
 	<div class="score-table">
 		<div v-if="!isSecondType" class="score-table__time">
+			<svg class="score-table__watch" viewBox="0 0 40 44" aria-hidden="true">
+				<rect x="15" y="1" width="10" height="6" rx="2" fill="#fecb23" stroke="#1a1033" stroke-width="2.5" />
+				<path d="M31 9l4 4" stroke="#1a1033" stroke-width="5" stroke-linecap="round" />
+				<path d="M31 9l4 4" stroke="#fecb23" stroke-width="2" stroke-linecap="round" />
+				<circle cx="20" cy="25" r="16" fill="#fecb23" stroke="#1a1033" stroke-width="3" />
+				<circle cx="20" cy="25" r="11.5" fill="#fffbe9" stroke="#1a1033" stroke-width="2" />
+				<path d="M20 25V17M20 25l5 3" stroke="#1a1033" stroke-width="2.5" stroke-linecap="round" />
+			</svg>
 			<span class="score-table__time-value">{{ timeValue }}</span>
 		</div>
 		<div class="score-table__move">
@@ -144,47 +152,58 @@ function addZero(num: number) {
 </script>
 
 <style lang="scss" scoped>
+/* Плашка как в макете: синяя, в золотой рамке; время сверху, ходы — во
+   вложенной тёмной «таблетке». Жёсткая тень снизу вместо размытой. */
 .score-table {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
-	gap: 25px;
+	gap: 4px;
+	min-width: 0;
+	padding: 4px 14px 6px;
+	background: #124490;
+	border: 3px solid #fecb23;
+	border-radius: 14px;
+	box-shadow: 0 4px 0 #1a1033;
 
-	@media screen and (max-width: 520px) {
-		justify-content: center;
-		flex-direction: column;
-		gap: 0px 15px;
-		flex-wrap: wrap;
-	}
-
-	&__time,
-	&__move {
+	&__time {
 		display: flex;
 		align-items: center;
-		font-weight: 600;
-		font-size: 18px;
-		gap: 5px;
+		gap: 8px;
 		color: #fff;
+		font-weight: 800;
+		font-size: 24px;
+		line-height: 1.1;
+	}
 
-		span {
-			&:last-child {
-				text-align: center;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
-
-				@media screen and (max-width: 780px) {
-					min-width: unset;
-				}
-			}
-		}
-
-		&--value {
-			color: #dc1c2c;
-		}
+	&__watch {
+		width: 26px;
+		height: 29px;
+		flex: none;
 	}
 
 	&__time-value {
-		width: 140px;
+		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
+	}
+
+	&__move {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		padding: 1px 16px;
+		background: #0a366e;
+		border-radius: 999px;
+		color: #fff;
+		font-weight: 700;
+		font-size: 16px;
+		white-space: nowrap;
+
+		&--value {
+			color: #ffd54f;
+			font-weight: 800;
+		}
 	}
 }
 </style>
