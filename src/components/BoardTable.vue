@@ -518,12 +518,13 @@ function calculateBoardWidth() {
 			}
 		}
 
-		/* Маскот стоит на клетке, голова чуть выше её края */
+		/* Маскот стоит внутри клетки: подставка по центру (спрайты выровнены
+		   по ней при нарезке), низ — чуть выше нижней кромки */
 		&__piece {
 			position: absolute;
-			height: 112%;
+			height: 98%;
 			left: 50%;
-			bottom: 3%;
+			bottom: 5%;
 			transform: translateX(-50%);
 			display: block;
 			user-select: none;
