@@ -602,7 +602,7 @@ function calculateBoardWidth() {
 	flex-direction: column;
 	align-items: center;
 	pointer-events: none;
-	animation: banner 1s ease-out forwards;
+	animation: banner 0.8s ease-out forwards;
 
 	&__word,
 	&__mult {
@@ -615,12 +615,12 @@ function calculateBoardWidth() {
 	}
 
 	&__word {
-		font-size: 44px;
+		font-size: 34px;
 		color: #ffe14f;
 	}
 
 	&__mult {
-		font-size: 26px;
+		font-size: 20px;
 		color: #ff7eb6;
 	}
 }

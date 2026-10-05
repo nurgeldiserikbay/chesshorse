@@ -84,6 +84,9 @@ const popups = ref<IBoardPopup[]>([])
 const banner = ref<{ id: number; text: string; mult: number } | null>(null)
 let popupId = 0
 let bannerTimer: ReturnType<typeof setTimeout> | undefined
+// Слово серии — редкая награда: только на максимуме и не чаще раза в 15 с
+let lastBannerAt = 0
+const BANNER_COOLDOWN = 15000
 
 // Счёт на панели «докручивается» до настоящего, а не прыгает.
 const shownScore = ref(0)
@@ -182,6 +185,10 @@ watch(
 		if (collected.value.crown > 0)
 			list.push({ label: 'Royal crown', points: 50 })
 		bonuses.value = list
+		setTimeout(
+			() => playAudio(knightMood.value === 'think' ? 'fail' : 'win'),
+			350
+		)
 
 		const total = score.value + list.reduce((acc, b) => acc + b.points, 0)
 		updateGameStat.value(['score', 'stars'], {
@@ -244,11 +251,7 @@ function move({ row, col }: { row: number; col: number }) {
 		board.value = game.value?.board?.board?.map((r) => r) || []
 		horsePos.value = [...(game.value?.horses[0]?.currentPos || [0, 0])]
 		updatePossibleMoves()
-		if (is_coin) {
-			playAudio('pickupCoin')
-		} else {
-			playAudio('move')
-		}
+		playAudio('hop')
 
 		if (curGameStat.value) {
 			if (isThirdType.value) {
@@ -330,10 +333,16 @@ function collectItem(row: number, col: number, isItem: boolean) {
 		popups.value = popups.value.filter((p) => p.id !== id)
 	}, 900)
 
-	if (COMBO_WORDS[combo.value] && combo.value > (banner.value?.mult || 0)) {
-		showBanner(COMBO_WORDS[combo.value], combo.value)
+	const now = Date.now()
+	if (combo.value === MAX_COMBO && now - lastBannerAt > BANNER_COOLDOWN) {
+		lastBannerAt = now
+		showBanner(COMBO_WORDS[MAX_COMBO], MAX_COMBO)
 	}
 	flyToScore(row, col, kind)
+
+	// Звук — в момент приземления, нота поднимается вместе с серией
+	const step = combo.value
+	setTimeout(() => playAudio(group, step), 300)
 }
 
 function showBanner(text: string, mult: number) {
@@ -341,7 +350,7 @@ function showBanner(text: string, mult: number) {
 	banner.value = { id: ++popupId, text, mult }
 	bannerTimer = setTimeout(() => {
 		banner.value = null
-	}, 1000)
+	}, 800)
 }
 
 // Копия предмета летит по дуге из клетки в значок на панели счёта.

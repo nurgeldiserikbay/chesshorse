@@ -10,6 +10,7 @@ import { usePageStore } from '@/store/pageStore'
 import { useGameStore } from '@/store/gameStore'
 
 import Admob from '@/utils/admob'
+import { useAudio } from '@/composables/useAudio'
 
 import { useAdsStore } from '@/store/adsStore'
 
@@ -21,6 +22,11 @@ const gameStore = useGameStore()
 onBeforeMount(() => {
 	gameStore.loadData()
 })
+
+// Браузер и WebView дают включить звук только после касания — музыка
+// стартует с первого же нажатия в любом месте.
+const { startMusic } = useAudio()
+window.addEventListener('pointerdown', () => startMusic(), { once: true })
 
 onMounted(async () => {
 	gameSettings.setBodyBG()

@@ -13,7 +13,7 @@ import { useAudio } from '@/composables/useAudio'
 // import { GAME_SETTINGS } from '@/utils/conts'
 
 const gameSettings = useGameSettings()
-const { audioActive, toggleAudio } = useAudio()
+const { audioActive, toggleAudio, musicActive, toggleMusic } = useAudio()
 
 const isActive = ref(false)
 
@@ -59,6 +59,15 @@ const isActive = ref(false)
 								<UiToggle
 									:modelValue="audioActive"
 									@update:modelValue="toggleAudio"
+								/>
+							</div>
+						</div>
+						<div class="settings-menu__option settings-menu__option--row">
+							<div class="settings-menu__option-title">Music</div>
+							<div class="settings-menu__option-body">
+								<UiToggle
+									:modelValue="musicActive"
+									@update:modelValue="toggleMusic"
 								/>
 							</div>
 						</div>
