@@ -138,6 +138,46 @@ const starsGoal = computed(() => {
 	return null
 })
 
+// Обучение: в самой первой партии два хода с подсказкой, потом никогда
+const TUTORIAL_KEY = 'chesshorse.tutorial'
+const tutorialLeft = ref(
+	(() => {
+		try {
+			return localStorage.getItem(TUTORIAL_KEY) ? 0 : 2
+		} catch {
+			return 0
+		}
+	})()
+)
+
+const guide = computed(() => {
+	if (!tutorialLeft.value || isGameEnd.value || !possibleMoves.value.length)
+		return null
+	// показываем ход на клетку с предметом, если такая есть
+	const target =
+		possibleMoves.value.find((p) => items.value[cellKey(p[0], p[1])]) ||
+		possibleMoves.value[0]
+	return {
+		target,
+		text:
+			tutorialLeft.value === 2
+				? 'Jump in an L — tap a glowing cell!'
+				: 'Great! Now collect everything',
+	}
+})
+
+function tutorialStep() {
+	if (!tutorialLeft.value) return
+	tutorialLeft.value--
+	if (!tutorialLeft.value) {
+		try {
+			localStorage.setItem(TUTORIAL_KEY, '1')
+		} catch {
+			// не запомнилось — покажем ещё раз, не страшно
+		}
+	}
+}
+
 const knightMood = computed<KnightMood>(() => {
 	if (!isGameEnd.value) return 'happy'
 	return resultTitle.value === 'No Moves Left' ? 'think' : 'cheer'
@@ -247,6 +287,7 @@ function move({ row, col }: { row: number; col: number }) {
 	const isMoved = game.value?.move(row, col, !isSecondType.value)
 
 	if (isMoved) {
+		tutorialStep()
 		collectItem(row, col, is_coin)
 		board.value = game.value?.board?.board?.map((r) => r) || []
 		horsePos.value = [...(game.value?.horses[0]?.currentPos || [0, 0])]
@@ -479,6 +520,7 @@ function timeend() {
 			:popups="popups"
 			:banner="banner"
 			:mood="knightMood"
+			:guide="guide"
 			@move="move"
 		/>
 		<div v-if="!adsStore.loading && board.value" class="coins-panel">

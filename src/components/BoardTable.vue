@@ -13,6 +13,20 @@
 				:class="`table__corner--${corner}`"
 			></span>
 
+			<!-- Обучение: подсказка и пунктирная «Г» от коня к клетке -->
+			<div v-if="guide" :key="guide.text" class="guide-tip">
+				{{ guide.text }}
+			</div>
+			<svg v-if="guide && !jumping" class="guide" aria-hidden="true">
+				<polyline class="guide__line" :points="guidePoints" />
+				<circle
+					class="guide__target"
+					:cx="guideEnd[0]"
+					:cy="guideEnd[1]"
+					:r="boardWidth * 0.42"
+				/>
+			</svg>
+
 			<!-- Золотой след прыжка по букве «Г» -->
 			<svg v-if="trail" :key="trail.id" class="trail" aria-hidden="true">
 				<polyline class="trail__glow" :points="trail.points" />
@@ -154,6 +168,8 @@ const $props = withDefaults(
 		popups?: IBoardPopup[]
 		banner?: { id: number; text: string; mult: number } | null
 		mood?: KnightMood
+		// обучение: куда показать ход и что написать
+		guide?: { target: number[]; text: string } | null
 	}>(),
 	{
 		isHide: false,
@@ -162,6 +178,7 @@ const $props = withDefaults(
 		popups: () => [],
 		banner: null,
 		mood: 'happy',
+		guide: null,
 	}
 )
 
@@ -192,10 +209,32 @@ const itemAt = (row: number, col: number): ItemKind =>
 
 const isPossibleMove = computed(() => (row: number, col: number) => {
 	return (
-		gameSettings.showPossibleMoves &&
+		(gameSettings.showPossibleMoves || !!$props.guide) &&
 		$props.possibleMoves?.some((p) => p[0] === row && p[1] === col)
 	)
 })
+
+const cellCenter = (p: number[]) => {
+	const step = boardWidth.value + GAP
+	return [
+		FRAME_PAD + p[1] * step + boardWidth.value / 2,
+		FRAME_PAD + p[0] * step + boardWidth.value / 2,
+	]
+}
+
+// Путь подсказки: длинная сторона «Г», затем короткая — как сам прыжок
+const guidePoints = computed(() => {
+	if (!$props.guide) return ''
+	const from = $props.horsePos
+	const to = $props.guide.target
+	const corner =
+		Math.abs(to[0] - from[0]) === 2 ? [to[0], from[1]] : [from[0], to[1]]
+	return [from, corner, to].map((p) => cellCenter(p).join(',')).join(' ')
+})
+
+const guideEnd = computed(() =>
+	$props.guide ? cellCenter($props.guide.target) : [0, 0]
+)
 
 const getCellStyle = computed(() => {
 	return {
@@ -781,6 +820,105 @@ function calculateBoardWidth() {
 	}
 	50% {
 		transform: translateX(-50%) translateY(-10%);
+	}
+}
+
+/* Обучение */
+.guide {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 45;
+	pointer-events: none;
+	overflow: visible;
+
+	&__line {
+		fill: none;
+		stroke: #fff6c4;
+		stroke-width: 5;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		stroke-dasharray: 2 10;
+		filter: drop-shadow(0 0 3px rgba(26, 16, 51, 0.8));
+		animation: guide-run 0.6s linear infinite;
+	}
+
+	&__target {
+		fill: none;
+		stroke: #fff;
+		stroke-width: 4;
+		transform-box: fill-box;
+		transform-origin: center;
+		animation: guide-tap 1s ease-in-out infinite;
+	}
+}
+
+.guide-tip {
+	position: absolute;
+	z-index: 90;
+	left: 50%;
+	bottom: calc(100% + 12px);
+	width: max-content;
+	white-space: nowrap;
+	max-width: 92%;
+	transform: translateX(-50%);
+	padding: 5px 12px;
+	box-sizing: border-box;
+	background: #fcf3e5;
+	border: 3px solid #1a1033;
+	border-radius: 14px;
+	box-shadow: 0 4px 0 #1a1033;
+	color: #2a2457;
+	font-size: 13px;
+	font-weight: 800;
+	letter-spacing: 0.3px;
+	line-height: 1.3;
+	text-align: center;
+	pointer-events: none;
+	animation: tip-in 0.3s ease-out;
+
+	/* «хвостик» облачка к доске */
+	&::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		bottom: -10px;
+		width: 14px;
+		height: 14px;
+		background: #fcf3e5;
+		border-right: 3px solid #1a1033;
+		border-bottom: 3px solid #1a1033;
+		transform: translateX(-50%) rotate(45deg);
+	}
+}
+
+@keyframes guide-run {
+	to {
+		stroke-dashoffset: -12;
+	}
+}
+
+@keyframes guide-tap {
+	0%,
+	100% {
+		transform: scale(0.75);
+		opacity: 0.9;
+	}
+	50% {
+		transform: scale(1);
+		opacity: 0.4;
+	}
+}
+
+@keyframes tip-in {
+	from {
+		transform: translateX(-50%) translateY(8px);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(-50%) translateY(0);
+		opacity: 1;
 	}
 }
 
