@@ -21,46 +21,41 @@ function update() {
 </script>
 
 <style lang="scss" scoped>
-$height: 22px;
+/* Крупный переключатель в стиле игры: тёмная обводка, жёсткие края */
+$h: 30px;
 
 .ui-toggle {
-	display: inline-block;
-	width: 2 * $height;
-	height: $height;
-	min-width: 2 * $height;
-	border-radius: ($height + 2) * 0.5;
 	position: relative;
-	background: #cfcfcfbc;
-	transition: 0.3s linear;
+	flex: none;
+	width: 2 * $h;
+	height: $h;
+	box-sizing: border-box;
+	border: 3px solid #1a1033;
+	border-radius: $h;
+	background: #b9b3d6;
+	box-shadow: inset 0 3px 0 rgba(26, 16, 51, 0.25);
+	transition: background 0.2s ease;
 	cursor: pointer;
-	box-shadow: inset 0 0 5px 0 rgba(0, 0, 0, 0.8);
 
 	&--active {
-		background: #e5ff00;
-		box-shadow: inset 0 0 5px 0 rgba(0, 0, 0, 0.8);
+		background: #3ccf5a;
 	}
 
 	&__circle {
 		position: absolute;
-		top: $height * -0.1;
-		left: $height * -0.1;
-		width: $height * 1.2;
-		height: $height * 1.2;
-		border-radius: 50%;
-		background: radial-gradient(
-			ellipse at center,
-			rgb(161, 247, 171) 0%,
-			#43fa01 60%,
-			#040e00 90%
-		);
+		top: 1px;
+		left: 1px;
+		width: $h - 8px;
+		height: $h - 8px;
 		box-sizing: border-box;
-		transition: 0.1s linear;
-		transform: translateX(0);
-		box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.2);
+		border: 3px solid #1a1033;
+		border-radius: 50%;
+		background: #fff;
+		transition: transform 0.18s ease;
 	}
 
 	&--active &__circle {
-		transform: translateX($height);
+		transform: translateX($h);
 	}
 }
 </style>
