@@ -17,7 +17,7 @@
 			<div v-if="guide" :key="guide.text" class="guide-tip">
 				{{ guide.text }}
 			</div>
-			<svg v-if="guide && !jumping" class="guide" aria-hidden="true">
+			<svg v-if="guide?.target && !jumping" class="guide" aria-hidden="true">
 				<polyline class="guide__line" :points="guidePoints" />
 				<circle
 					class="guide__target"
@@ -169,7 +169,8 @@ const $props = withDefaults(
 		banner?: { id: number; text: string; mult: number } | null
 		mood?: KnightMood
 		// обучение: куда показать ход и что написать
-		guide?: { target: number[]; text: string } | null
+		// target: null — только подсказка над доской, без стрелки
+		guide?: { target: number[] | null; text: string } | null
 	}>(),
 	{
 		isHide: false,
@@ -209,7 +210,7 @@ const itemAt = (row: number, col: number): ItemKind =>
 
 const isPossibleMove = computed(() => (row: number, col: number) => {
 	return (
-		(gameSettings.showPossibleMoves || !!$props.guide) &&
+		(gameSettings.showPossibleMoves || !!$props.guide?.target) &&
 		$props.possibleMoves?.some((p) => p[0] === row && p[1] === col)
 	)
 })
@@ -224,7 +225,7 @@ const cellCenter = (p: number[]) => {
 
 // Путь подсказки: длинная сторона «Г», затем короткая — как сам прыжок
 const guidePoints = computed(() => {
-	if (!$props.guide) return ''
+	if (!$props.guide?.target) return ''
 	const from = $props.horsePos
 	const to = $props.guide.target
 	const corner =
@@ -233,7 +234,7 @@ const guidePoints = computed(() => {
 })
 
 const guideEnd = computed(() =>
-	$props.guide ? cellCenter($props.guide.target) : [0, 0]
+	$props.guide?.target ? cellCenter($props.guide.target) : [0, 0]
 )
 
 const getCellStyle = computed(() => {

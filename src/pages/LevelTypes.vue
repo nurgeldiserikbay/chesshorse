@@ -30,7 +30,7 @@ const MODES: {
 	{
 		type: GAME_TYPES.NO_WAY_BACK,
 		title: 'One Way',
-		desc: 'Every move is final — no way back',
+		desc: 'Puzzle: collect all, never the same cell twice',
 		icon: signpostImg,
 		color: 'purple',
 	},

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 
-import { LEVELS, PAGES, GAME_TYPES } from '@/utils/conts'
+import { PAGES, GAME_TYPES, levelsFor } from '@/utils/conts'
 
 import HeadMain from '@/components/HeadMain.vue'
 
@@ -32,12 +32,19 @@ const MODE_TITLE: Record<string, string> = {
 }
 
 const gameType = computed(() => gameStore.gameType)
+const LEVELS = levelsFor(gameStore.gameType)
 const isClassic = computed(() => gameType.value === GAME_TYPES.COLLECT_ALL)
 const levelStat = (level: number) =>
 	gameType.value ? gameStore.gameStats[gameType.value]?.[level] : undefined
 
+// One Way открывается по порядку внутри себя, остальное — по Classic
 const isLevelActive = (level: number) =>
-	level === 0 || !!gameStore.gameStats[GAME_TYPES.COLLECT_ALL]?.[level - 1]
+	level === 0 ||
+	!!gameStore.gameStats[
+		gameType.value === GAME_TYPES.NO_WAY_BACK
+			? GAME_TYPES.NO_WAY_BACK
+			: GAME_TYPES.COLLECT_ALL
+	]?.[level - 1]
 
 // Текущий — первый открытый, но ещё не пройденный в этом режиме
 const currentLevel = computed(() => {
@@ -132,7 +139,11 @@ onBeforeUnmount(() => {
 		</div>
 
 		<div v-show="modalActive" class="levels-page__modal">
-			Finish the previous level in Classic to open this one
+			{{
+				gameType === GAME_TYPES.NO_WAY_BACK
+					? 'Finish the previous level to open this one'
+					: 'Finish the previous level in Classic to open this one'
+			}}
 		</div>
 
 		<div class="map" :style="{ height: `${mapHeight}px` }">

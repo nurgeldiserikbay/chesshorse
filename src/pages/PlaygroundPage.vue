@@ -29,7 +29,7 @@ import {
 	cellKey,
 } from '@/game/items'
 
-import { LEVELS, GAME_TYPES } from '@/utils/conts'
+import { GAME_TYPES, levelsFor } from '@/utils/conts'
 import { copyArray } from '@/utils/helpers'
 
 import { useAudio } from '@/composables/useAudio'
@@ -150,9 +150,23 @@ const tutorialLeft = ref(
 	})()
 )
 
+// One Way: при первом входе в режим — короткое правило над доской
+const ONE_WAY_TIP_KEY = 'chesshorse.tutorial.oneway'
+const oneWayTipShown = ref(
+	(() => {
+		try {
+			return !!localStorage.getItem(ONE_WAY_TIP_KEY)
+		} catch {
+			return true
+		}
+	})()
+)
+
 const guide = computed(() => {
-	if (!tutorialLeft.value || isGameEnd.value || !possibleMoves.value.length)
-		return null
+	if (isGameEnd.value) return null
+	if (isSecondType.value && !oneWayTipShown.value)
+		return { target: null, text: 'Every cell only once — plan your path!' }
+	if (!tutorialLeft.value || !possibleMoves.value.length) return null
 	// показываем ход на клетку с предметом, если такая есть
 	const target =
 		possibleMoves.value.find((p) => items.value[cellKey(p[0], p[1])]) ||
@@ -167,6 +181,14 @@ const guide = computed(() => {
 })
 
 function tutorialStep() {
+	if (isSecondType.value && !oneWayTipShown.value && moves.value >= 1) {
+		oneWayTipShown.value = true
+		try {
+			localStorage.setItem(ONE_WAY_TIP_KEY, '1')
+		} catch {
+			// не запомнилось — покажем ещё раз
+		}
+	}
 	if (!tutorialLeft.value) return
 	tutorialLeft.value--
 	if (!tutorialLeft.value) {
@@ -180,12 +202,12 @@ function tutorialStep() {
 
 const knightMood = computed<KnightMood>(() => {
 	if (!isGameEnd.value) return 'happy'
-	return resultTitle.value === 'No Moves Left' ? 'think' : 'cheer'
+	return resultTitle.value === 'Stuck!' ? 'think' : 'cheer'
 })
 
 const resultTitle = computed(() => {
 	if (isThirdType.value) return "Time's Up!"
-	if (isSecondType.value && pillCounts.value) return 'No Moves Left'
+	if (isSecondType.value && pillCounts.value) return 'Stuck!'
 	return 'Level Complete!'
 })
 
@@ -231,9 +253,10 @@ watch(
 		)
 
 		const total = score.value + list.reduce((acc, b) => acc + b.points, 0)
-		updateGameStat.value(['score', 'stars'], {
+		updateGameStat.value(['score', 'stars', 'failed'], {
 			score: total,
 			stars: isFirstType.value ? stars.value : 0,
+			failed: isSecondType.value && !!pillCounts.value,
 		})
 	}
 )
@@ -319,13 +342,13 @@ function initGame() {
 
 	if (isThirdType.value) {
 		boardInit = clearBoard(
-			copyArray(LEVELS[currentLevel.value || 0].board) as TypeBoard
+			copyArray(levelsFor(gameType.value)[currentLevel.value || 0].board) as TypeBoard
 		)
 	} else {
-		boardInit = copyArray(LEVELS[currentLevel.value || 0].board) as TypeBoard
+		boardInit = copyArray(levelsFor(gameType.value)[currentLevel.value || 0].board) as TypeBoard
 	}
 
-	horsePos.value = copyArray(LEVELS[currentLevel.value || 0].horsePos)
+	horsePos.value = copyArray(levelsFor(gameType.value)[currentLevel.value || 0].horsePos)
 	board.value = boardInit
 	game.value = new Game({
 		board: boardInit,
@@ -344,7 +367,9 @@ function initGame() {
 	bonuses.value = []
 	popups.value = []
 	banner.value = null
-	assignNewItems(seededRandom((currentLevel.value || 0) + 1))
+	assignNewItems(
+		seededRandom((currentLevel.value || 0) + 1 + (isSecondType.value ? 500 : 0))
+	)
 
 	totalCoins.value = pillCounts.value || 0
 	movesPar.value = isFirstType.value
@@ -501,6 +526,11 @@ function timeend() {
 				:title="resultTitle"
 				:stars="isFirstType ? stars : null"
 				:goal="isFirstType && stars < 3 ? movesPar : null"
+				:hint="
+					resultTitle === 'Stuck!'
+						? `${pillCounts} left — try another route, every cell only once`
+						: ''
+				"
 				:par="isFirstType ? movesPar : null"
 				:baseScore="score"
 				:bonuses="bonuses"

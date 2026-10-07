@@ -2,7 +2,7 @@ import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { Preferences } from '@capacitor/preferences'
 
-import { LEVELS, GAME_TYPE, GAME_TYPES } from '@/utils/conts'
+import { LEVELS, GAME_TYPE, GAME_TYPES, levelsFor } from '@/utils/conts'
 
 export interface IGameStat {
 	time: string
@@ -10,11 +10,15 @@ export interface IGameStat {
 	date: string
 	score?: number
 	stars?: number
+	// партия не засчитана (One Way: застрял, собрав не всё)
+	failed?: boolean
 }
 
 export type IGameStats = {
 	[key: string]: { [key: number]: IGameStat }
 }
+
+const ONE_WAY_VERSION_KEY = 'chesshorse.oneway.version'
 
 export const useGameStore = defineStore('GameStore', () => {
 	const gameType = ref<GAME_TYPE | null>(null)
@@ -25,6 +29,7 @@ export const useGameStore = defineStore('GameStore', () => {
 		date: '',
 		score: 0,
 		stars: 0,
+		failed: false,
 	})
 	const gameStats = ref<IGameStats>({
 		[GAME_TYPES.COLLECT_ALL]: {},
@@ -33,6 +38,11 @@ export const useGameStore = defineStore('GameStore', () => {
 	})
 
 	const nextLevel = computed(() => {
+		// One Way открывается внутри себя: следующий — после пройденного текущего
+		if (gameType.value === GAME_TYPES.NO_WAY_BACK) {
+			if (!gameStats.value[GAME_TYPES.NO_WAY_BACK][currentLevel.value]) return
+			return levelsFor(gameType.value)[currentLevel.value + 1]?.level
+		}
 		if (
 			gameType.value !== GAME_TYPES.COLLECT_ALL &&
 			!gameStats.value[GAME_TYPES.COLLECT_ALL][currentLevel.value]
@@ -65,6 +75,7 @@ export const useGameStore = defineStore('GameStore', () => {
 			date: '',
 			score: 0,
 			stars: 0,
+			failed: false,
 		}
 	}
 
@@ -86,6 +97,9 @@ export const useGameStore = defineStore('GameStore', () => {
 			curGameStat.value.date = new Date().toDateString()
 		}
 
+		// Незасчитанная партия (застрял в One Way) уровень не проходит
+		if (curGameStat.value?.failed) return
+
 		// Последняя партия — время и ходы, а звёзды и очки — лучшие за всё время:
 		// переигровка не должна отнимать заработанное.
 		if (gameType.value) {
@@ -103,6 +117,16 @@ export const useGameStore = defineStore('GameStore', () => {
 	}
 
 	async function loadData() {
+		// Отметка версии ставится сразу, даже без сохранений: иначе у нового
+		// игрока сброс сработал бы при втором запуске и стёр настоящий прогресс.
+		let legacyOneWay = false
+		try {
+			legacyOneWay = localStorage.getItem(ONE_WAY_VERSION_KEY) !== '2'
+			localStorage.setItem(ONE_WAY_VERSION_KEY, '2')
+		} catch {
+			// хранилище недоступно — сбрасывать не будем
+		}
+
 		const ret = await Preferences.get({ key: 'gameStats' })
 
 		if (!ret.value) return
@@ -124,6 +148,10 @@ export const useGameStore = defineStore('GameStore', () => {
 				gameStats.value[type] = value as IGameStats[string]
 			}
 		})
+
+		// One Way стал головоломкой с новыми уровнями под теми же номерами:
+		// результаты старого режима к ним не относятся
+		if (legacyOneWay) gameStats.value[GAME_TYPES.NO_WAY_BACK] = {}
 	}
 
 	return {

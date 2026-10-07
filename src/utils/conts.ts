@@ -1,4 +1,5 @@
 import levels from './levels'
+import { ONE_WAY_LEVELS } from './oneway-levels'
 import bgValley from '@/assets/img/game/bg-valley.webp'
 
 export type GAME_TYPE = 'COLLECT_ALL' | 'NO_WAY_BACK' | 'BY_TIME'
@@ -19,6 +20,35 @@ export const PAGES: { [key in PagesType]: PagesType } = {
 }
 
 export const LEVELS = levels
+
+// One Way — головоломка: предметы лежат на пути коня без повторов, остальные
+// клетки пусты (в этом режиме на пустую клетку ходить нельзя). Уровни
+// сгенерированы scripts/gen-oneway-levels.mjs с растущей сложностью.
+export const ONE_WAY_BOARDS = ONE_WAY_LEVELS.map((l, i) => {
+	const isItem = new Set(l.items.map((p) => p.join()))
+	return {
+		level: i,
+		horsePos: [...l.start],
+		board: Array.from({ length: 8 }, (_, row) =>
+			Array.from({ length: 8 }, (_, col) => ({
+				row,
+				col,
+				user: null,
+				type:
+					row === l.start[0] && col === l.start[1]
+						? 'horse'
+						: isItem.has(`${row},${col}`)
+						? 'pill'
+						: 'cell',
+			}))
+		),
+		img: '',
+	}
+})
+
+/** Уровни режима: у One Way свои, остальные режимы идут по общим. */
+export const levelsFor = (type: GAME_TYPE | null) =>
+	type === GAME_TYPES.NO_WAY_BACK ? ONE_WAY_BOARDS : LEVELS
 
 export const GAME_SETTINGS = [
 	{

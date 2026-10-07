@@ -59,6 +59,7 @@
 					<span>×{{ g.count }}</span>
 				</div>
 			</div>
+			<div v-if="hint" class="result-table__hint">{{ hint }}</div>
 			<div v-if="goal !== null" class="result-table__goal">
 				<img :src="starFullImg" alt="" />×3 — no more than {{ goal }} moves
 			</div>
@@ -129,6 +130,7 @@ const $props = withDefaults(
 		maxCombo?: number
 		collected?: Record<ItemGroup, number>
 		mood?: KnightMood
+		hint?: string
 	}>(),
 	{
 		title: 'Game End',
@@ -140,6 +142,7 @@ const $props = withDefaults(
 		maxCombo: 0,
 		collected: () => ({ candy: 0, star: 0, crystal: 0, crown: 0 }),
 		mood: 'cheer',
+		hint: '',
 	}
 )
 
@@ -385,6 +388,17 @@ function next() {
 			height: 30px;
 			object-fit: contain;
 		}
+	}
+
+	&__hint {
+		padding: 6px 10px;
+		border-radius: 12px;
+		background: #ffe3e3;
+		color: #b3262f;
+		font-size: 14px;
+		font-weight: 800;
+		text-align: center;
+		letter-spacing: 0.3px;
 	}
 
 	&__goal {
