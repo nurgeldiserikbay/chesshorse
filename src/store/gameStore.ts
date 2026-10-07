@@ -37,7 +37,15 @@ export const useGameStore = defineStore('GameStore', () => {
 		[GAME_TYPES.BY_TIME]: {},
 	})
 
+	// Добавка времени в Time Attack: ScoreTable прибавляет разницу к таймеру
+	const timeBonus = ref(0)
+	function addTimeBonus(seconds: number) {
+		timeBonus.value += seconds * 10 // таймер считает десятые доли
+	}
+
 	const nextLevel = computed(() => {
+		// забег один, «следующего уровня» у него нет
+		if (gameType.value === GAME_TYPES.BY_TIME) return
 		// One Way открывается внутри себя: следующий — после пройденного текущего
 		if (gameType.value === GAME_TYPES.NO_WAY_BACK) {
 			if (!gameStats.value[GAME_TYPES.NO_WAY_BACK][currentLevel.value]) return
@@ -165,6 +173,8 @@ export const useGameStore = defineStore('GameStore', () => {
 		gameEnd,
 		reload,
 		gameStats,
+		timeBonus,
+		addTimeBonus,
 		loadData,
 	}
 })

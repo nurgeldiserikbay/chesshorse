@@ -1,6 +1,10 @@
 <template>
 	<div class="score-table">
-		<div v-if="!isSecondType" class="score-table__time">
+		<div
+			v-if="!isSecondType"
+			class="score-table__time"
+			:class="{ 'score-table__time--low': lowTime }"
+		>
 			<img class="score-table__watch" :src="stopwatchImg" alt="" />
 			<span class="score-table__time-value">{{ timeValue }}</span>
 		</div>
@@ -82,6 +86,19 @@ watch(
 		}
 	}
 )
+
+// Секундомер в забеге: прибавляем разницу к оставшемуся времени
+watch(
+	() => gameStore.timeBonus,
+	(now, before) => {
+		if (isThirdType.value && now > before && !$props.isGameEnd) {
+			date.value += now - before
+			setTimerValue()
+		}
+	}
+)
+
+const lowTime = computed(() => isThirdType.value && date.value <= 50)
 
 watch(
 	() => date.value,
@@ -166,6 +183,12 @@ function addZero(num: number) {
 		line-height: 1.1;
 	}
 
+	/* Последние 5 секунд забега — время краснеет и пульсирует */
+	&__time--low {
+		color: #ff6b6b;
+		animation: low-pulse 0.5s ease-in-out infinite alternate;
+	}
+
 	&__watch {
 		width: 30px;
 		height: 34px;
@@ -196,6 +219,15 @@ function addZero(num: number) {
 			color: #ffd54f;
 			font-weight: 800;
 		}
+	}
+}
+
+@keyframes low-pulse {
+	from {
+		transform: scale(1);
+	}
+	to {
+		transform: scale(1.08);
 	}
 }
 </style>

@@ -24,12 +24,24 @@ import {
 	MAX_COMBO,
 	COMBO_WORDS,
 	itemGroup,
+	isSpecialItem,
 	pickItem,
 	seededRandom,
 	cellKey,
 } from '@/game/items'
 
 import { GAME_TYPES, levelsFor } from '@/utils/conts'
+import {
+	RUSH_ITEMS_ON_BOARD,
+	RUSH_LAYOUTS,
+	CRACK_MS,
+	clockSeconds,
+	fallDelayMs,
+	layoutForStage,
+	reachable,
+	movesFrom,
+	pickRushItem,
+} from '@/game/rush'
 import { copyArray } from '@/utils/helpers'
 
 import { useAudio } from '@/composables/useAudio'
@@ -50,9 +62,9 @@ import starFullImg from '@/assets/img/game/star-full.webp'
 import starEmptyImg from '@/assets/img/game/star-empty.webp'
 
 const gameSettings = useGameSettings()
-const { currentLevel, curGameStat, updateGameStat, reload, gameType } = toRefs(
-	useGameStore()
-)
+const gameStore = useGameStore()
+const { currentLevel, curGameStat, updateGameStat, reload, gameType } =
+	toRefs(gameStore)
 const adsStore = useAdsStore()
 
 const isOtherGames = ref(false)
@@ -81,12 +93,29 @@ const collected = ref<Record<ItemGroup, number>>({
 })
 const bonuses = ref<{ label: string; points: number }[]>([])
 const popups = ref<IBoardPopup[]>([])
-const banner = ref<{ id: number; text: string; mult: number } | null>(null)
+const banner = ref<{ id: number; text: string; sub: string } | null>(null)
 let popupId = 0
 let bannerTimer: ReturnType<typeof setTimeout> | undefined
 // Слово серии — редкая награда: только на максимуме и не чаще раза в 15 с
 let lastBannerAt = 0
 const BANNER_COOLDOWN = 15000
+
+// Time Attack — забег: этапы, падающие плитки, рекорд
+const stage = ref(1)
+const sinceStage = ref(0)
+const fallen = ref<string[]>([]) // упали на этом этапе — их чинит подарок
+const cracking = ref<string[]>([]) // трещина, скоро упадёт
+const fellNow = ref<string[]>([]) // только что упали — для анимации
+const restoredNow = ref<string[]>([]) // только что вернулись — для анимации
+const boardKey = ref(0) // смена поля пересоздаёт доску с анимацией появления
+const bestBefore = ref(0)
+const finalScore = ref(0)
+let rushTimers: ReturnType<typeof setTimeout>[] = []
+
+function clearRushTimers() {
+	rushTimers.forEach(clearTimeout)
+	rushTimers = []
+}
 
 // Счёт на панели «докручивается» до настоящего, а не прыгает.
 const shownScore = ref(0)
@@ -247,12 +276,15 @@ watch(
 		if (collected.value.crown > 0)
 			list.push({ label: 'Royal crown', points: 50 })
 		bonuses.value = list
+		clearRushTimers()
+		cracking.value = []
 		setTimeout(
 			() => playAudio(knightMood.value === 'think' ? 'fail' : 'win'),
 			350
 		)
 
 		const total = score.value + list.reduce((acc, b) => acc + b.points, 0)
+		finalScore.value = total
 		updateGameStat.value(['score', 'stars', 'failed'], {
 			score: total,
 			stars: isFirstType.value ? stars.value : 0,
@@ -289,6 +321,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(async () => {
+	clearRushTimers()
 	if (Capacitor.getPlatform() === 'android') {
 		await Admob.removeBanner()
 	}
@@ -306,7 +339,9 @@ function updatePossibleMoves() {
 }
 
 function move({ row, col }: { row: number; col: number }) {
+	if (isGameEnd.value) return
 	const is_coin = isCoin(game.value?.board?.board as TypeBoard, [row, col])
+	const kind = items.value[cellKey(row, col)]
 	const isMoved = game.value?.move(row, col, !isSecondType.value)
 
 	if (isMoved) {
@@ -321,9 +356,7 @@ function move({ row, col }: { row: number; col: number }) {
 			if (isThirdType.value) {
 				if (is_coin) {
 					if (!game.value) return
-					game.value.board.setCoin()
-					board.value = game.value?.board?.board
-					assignNewItems()
+					rushCollected(kind)
 					updateGameStat.value(['moves'], {
 						moves: curGameStat.value.moves + 1,
 					})
@@ -338,25 +371,27 @@ function move({ row, col }: { row: number; col: number }) {
 }
 
 function initGame() {
+	clearRushTimers()
 	let boardInit: TypeBoard
 
 	if (isThirdType.value) {
-		boardInit = clearBoard(
-			copyArray(levelsFor(gameType.value)[currentLevel.value || 0].board) as TypeBoard
-		)
+		// забег всегда начинается с самого открытого поля
+		boardInit = clearBoard(copyArray(RUSH_LAYOUTS[0].board) as TypeBoard)
 	} else {
 		boardInit = copyArray(levelsFor(gameType.value)[currentLevel.value || 0].board) as TypeBoard
 	}
 
-	horsePos.value = copyArray(levelsFor(gameType.value)[currentLevel.value || 0].horsePos)
+	horsePos.value = copyArray(
+		isThirdType.value
+			? RUSH_LAYOUTS[0].horsePos
+			: levelsFor(gameType.value)[currentLevel.value || 0].horsePos
+	)
 	board.value = boardInit
 	game.value = new Game({
 		board: boardInit,
 		horsePos: [horsePos.value],
 		usersCount: 1,
 	})
-
-	if (isThirdType.value) game.value.board.setCoin()
 
 	items.value = {}
 	score.value = 0
@@ -367,9 +402,24 @@ function initGame() {
 	bonuses.value = []
 	popups.value = []
 	banner.value = null
-	assignNewItems(
-		seededRandom((currentLevel.value || 0) + 1 + (isSecondType.value ? 500 : 0))
-	)
+	stage.value = 1
+	sinceStage.value = 0
+	fallen.value = []
+	cracking.value = []
+	fellNow.value = []
+	restoredNow.value = []
+	finalScore.value = 0
+
+	if (isThirdType.value) {
+		bestBefore.value =
+			gameStore.gameStats[GAME_TYPES.BY_TIME]?.[currentLevel.value || 0]?.score || 0
+		for (let i = 0; i < RUSH_ITEMS_ON_BOARD; i++) spawnRushItem()
+		scheduleFall()
+	} else {
+		assignNewItems(
+			seededRandom((currentLevel.value || 0) + 1 + (isSecondType.value ? 500 : 0))
+		)
+	}
 
 	totalCoins.value = pillCounts.value || 0
 	movesPar.value = isFirstType.value
@@ -385,16 +435,24 @@ function collectItem(row: number, col: number, isItem: boolean) {
 	}
 	const kind = items.value[cellKey(row, col)] || 'candy-pink'
 	const group = itemGroup(kind)
+	const special = isSpecialItem(kind)
 	combo.value = Math.min(combo.value + 1, MAX_COMBO)
 	maxCombo.value = Math.max(maxCombo.value, combo.value)
-	collected.value[group]++
+	if (!special) collected.value[group]++
 
 	const gained = ITEM_POINTS[kind] * combo.value
 	score.value += gained
 	updateGameStat.value(['score'], { score: score.value })
 
 	const id = ++popupId
-	popups.value.push({ id, row, col, points: gained, group })
+	popups.value.push({
+		id,
+		row,
+		col,
+		points: gained,
+		group: special ? 'crystal' : group,
+		label: kind === 'clock' ? `+${clockSeconds(stage.value)}s` : undefined,
+	})
 	setTimeout(() => {
 		popups.value = popups.value.filter((p) => p.id !== id)
 	}, 900)
@@ -402,18 +460,20 @@ function collectItem(row: number, col: number, isItem: boolean) {
 	const now = Date.now()
 	if (combo.value === MAX_COMBO && now - lastBannerAt > BANNER_COOLDOWN) {
 		lastBannerAt = now
-		showBanner(COMBO_WORDS[MAX_COMBO], MAX_COMBO)
+		showBanner(COMBO_WORDS[MAX_COMBO], `×${MAX_COMBO}`)
 	}
 	flyToScore(row, col, kind)
 
 	// Звук — в момент приземления, нота поднимается вместе с серией
 	const step = combo.value
-	setTimeout(() => playAudio(group, step), 300)
+	const sfx =
+		kind === 'clock' ? 'crystal' : kind === 'portal' || kind === 'repair' ? 'crown' : group
+	setTimeout(() => playAudio(sfx, step), 300)
 }
 
-function showBanner(text: string, mult: number) {
+function showBanner(text: string, sub: string) {
 	clearTimeout(bannerTimer)
-	banner.value = { id: ++popupId, text, mult }
+	banner.value = { id: ++popupId, text, sub }
 	bannerTimer = setTimeout(() => {
 		banner.value = null
 	}, 800)
@@ -485,6 +545,167 @@ function assignNewItems(rand: () => number = Math.random) {
 	)
 }
 
+// ---------------------------------------------------------------- забег ---
+
+function syncBoard() {
+	board.value = game.value?.board?.board?.map((r) => r) || []
+	updatePossibleMoves()
+}
+
+/** Новый предмет — только в клетку, куда конь может дойти */
+function spawnRushItem() {
+	const b = game.value?.board?.board
+	if (!b) return
+	const reach = reachable(b, horsePos.value)
+	const free: number[][] = []
+	b.forEach((r, ri) =>
+		r.forEach((c, ci) => {
+			const key = cellKey(ri, ci)
+			if (c.type === BOARD_ITEM.cell && reach.has(key) && !cracking.value.includes(key))
+				free.push([ri, ci])
+		})
+	)
+	if (!free.length) return
+	const [r, c] = free[Math.floor(Math.random() * free.length)]
+	b[r][c].type = BOARD_ITEM.pill
+	items.value[cellKey(r, c)] = pickRushItem({
+		stage: stage.value,
+		sinceStage: sinceStage.value,
+		fallen: fallen.value.length,
+		onBoard: Object.values(items.value),
+	})
+	syncBoard()
+}
+
+/** Эффект собранного предмета в забеге */
+function rushCollected(kind: ItemKind | undefined) {
+	delete items.value[cellKey(horsePos.value[0], horsePos.value[1])]
+	sinceStage.value++
+	if (kind === 'clock') gameStore.addTimeBonus(clockSeconds(stage.value))
+	if (kind === 'repair') repairFallen()
+	if (kind === 'portal') {
+		// новое поле — после приземления, чтобы прыжок доиграл
+		rushTimers.push(setTimeout(nextStage, 380))
+		return
+	}
+	spawnRushItem()
+}
+
+/** Следующий этап: поле с большим числом дырок, конь остаётся на месте */
+function nextStage() {
+	if (isGameEnd.value) return
+	clearRushTimers()
+	stage.value++
+	sinceStage.value = 0
+	fallen.value = []
+	cracking.value = []
+
+	let built: TypeBoard | null = null
+	let pos = horsePos.value
+	for (let attempt = 0; attempt < 12 && !built; attempt++) {
+		const b = clearBoard(copyArray(layoutForStage(stage.value).board) as TypeBoard)
+		b.forEach((r) => r.forEach((c) => c.type === BOARD_ITEM.horse && (c.type = BOARD_ITEM.cell)))
+		let p = pos
+		// если под конём теперь дыра — ставим его на клетку, откуда есть ходы
+		if (b[p[0]][p[1]].type === BOARD_ITEM.brick) {
+			const options: number[][] = []
+			b.forEach((r, ri) =>
+				r.forEach((c, ci) => {
+					if (c.type !== BOARD_ITEM.brick && movesFrom(b, [ri, ci]) >= 2) options.push([ri, ci])
+				})
+			)
+			if (!options.length) continue
+			p = options[Math.floor(Math.random() * options.length)]
+		}
+		if (reachable(b, p).size < 10) continue
+		b[p[0]][p[1]].type = BOARD_ITEM.horse
+		built = b
+		pos = p
+	}
+	if (!built) return
+
+	horsePos.value = [...pos]
+	game.value = new Game({ board: built, horsePos: [horsePos.value], usersCount: 1 })
+	items.value = {}
+	boardKey.value++
+	syncBoard()
+	for (let i = 0; i < RUSH_ITEMS_ON_BOARD; i++) spawnRushItem()
+	showBanner(`Stage ${stage.value}!`, 'New board')
+	scheduleFall()
+}
+
+/** Время от времени пустая плитка трескается и падает */
+function scheduleFall() {
+	rushTimers.push(setTimeout(crackTile, fallDelayMs(stage.value)))
+}
+
+function crackTile() {
+	if (isGameEnd.value) return
+	const b = game.value?.board?.board
+	if (!b) return
+	const free: string[] = []
+	b.forEach((r, ri) =>
+		r.forEach((c, ci) => {
+			const key = cellKey(ri, ci)
+			if (c.type === BOARD_ITEM.cell && !cracking.value.includes(key)) free.push(key)
+		})
+	)
+	if (free.length) {
+		const key = free[Math.floor(Math.random() * free.length)]
+		cracking.value = [...cracking.value, key]
+		rushTimers.push(setTimeout(() => dropTile(key), CRACK_MS))
+	}
+	scheduleFall()
+}
+
+function dropTile(key: string) {
+	cracking.value = cracking.value.filter((k) => k !== key)
+	if (isGameEnd.value) return
+	const b = game.value?.board?.board
+	if (!b) return
+	const [r, c] = key.split(':').map(Number)
+	// конь успел встать на треснувшую плитку — она его выдержала
+	if (b[r][c].type !== BOARD_ITEM.cell) return
+
+	b[r][c].type = BOARD_ITEM.brick
+	// падение не должно запереть коня без ходов
+	if (!movesFrom(b, horsePos.value)) {
+		b[r][c].type = BOARD_ITEM.cell
+		return
+	}
+	fallen.value = [...fallen.value, key]
+	fellNow.value = [...fellNow.value, key]
+	rushTimers.push(
+		setTimeout(() => (fellNow.value = fellNow.value.filter((k) => k !== key)), 500)
+	)
+
+	// предметы, отрезанные падением, переезжают туда, куда конь дойдёт
+	const reach = reachable(b, horsePos.value)
+	const cut = Object.keys(items.value).filter((k) => !reach.has(k))
+	cut.forEach((k) => {
+		const [ir, ic] = k.split(':').map(Number)
+		b[ir][ic].type = BOARD_ITEM.cell
+		delete items.value[k]
+	})
+	syncBoard()
+	cut.forEach(() => spawnRushItem())
+}
+
+/** Подарок: все упавшие на этом этапе плитки возвращаются */
+function repairFallen() {
+	const b = game.value?.board?.board
+	if (!b || !fallen.value.length) return
+	fallen.value.forEach((k) => {
+		const [r, c] = k.split(':').map(Number)
+		if (b[r][c].type === BOARD_ITEM.brick) b[r][c].type = BOARD_ITEM.cell
+	})
+	restoredNow.value = [...fallen.value]
+	fallen.value = []
+	rushTimers.push(setTimeout(() => (restoredNow.value = []), 600))
+	syncBoard()
+	showBanner('Repaired!', 'Tiles are back')
+}
+
 function clearBoard(board: TypeBoard) {
 	return board.map((row) =>
 		row.map((col) => {
@@ -522,6 +743,9 @@ function timeend() {
 		<div v-if="isGameEnd" class="playground-page__overlay">
 			<ResultTable
 				class="playground-page__table"
+				:stage="isThirdType ? stage : null"
+				:best="isThirdType ? Math.max(bestBefore, finalScore) : null"
+				:newRecord="isThirdType && finalScore > bestBefore"
 				:showTime="isFirstType"
 				:title="resultTitle"
 				:stars="isFirstType ? stars : null"
@@ -542,6 +766,10 @@ function timeend() {
 		</div>
 		<BoardTable
 			v-if="!adsStore.loading && board.value"
+			:key="boardKey"
+			:cracking="cracking"
+			:fellNow="fellNow"
+			:restoredNow="restoredNow"
 			:board="board.value"
 			:possibleMoves="possibleMoves"
 			:horsePos="horsePos"
@@ -564,6 +792,7 @@ function timeend() {
 						Score
 						<b :key="score" class="coins-panel__score">{{ shownScore }}</b>
 					</div>
+					<span v-if="isThirdType" class="coins-panel__goal">Stage {{ stage }}</span>
 					<div v-if="movesPar !== null" class="coins-panel__stars">
 						<img
 							v-for="i in 3"

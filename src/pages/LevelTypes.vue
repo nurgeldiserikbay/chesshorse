@@ -37,7 +37,7 @@ const MODES: {
 	{
 		type: GAME_TYPES.BY_TIME,
 		title: 'Time Attack',
-		desc: 'Collect as many as you can in time',
+		desc: 'Endless run: grab clocks, the board changes!',
 		icon: stopwatchImg,
 		color: 'blue',
 	},
@@ -45,6 +45,12 @@ const MODES: {
 
 function clickOnType(type: GAME_TYPE) {
 	gameStore.setGameType(type)
+	// Time Attack — один забег без карты уровней
+	if (type === GAME_TYPES.BY_TIME) {
+		gameStore.selectLevel(0)
+		routeTo(PAGES.PLAYGROUND)
+		return
+	}
 	routeTo(PAGES.LEVELS)
 }
 </script>

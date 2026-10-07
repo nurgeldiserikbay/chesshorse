@@ -68,12 +68,12 @@
 				:style="getPopupStyle(p.row, p.col)"
 			>
 				<img class="popup__burst" :src="BURST_IMG[p.group]" alt="" />
-				<span class="popup__text">+{{ p.points }}</span>
+				<span class="popup__text">{{ p.label || `+${p.points}` }}</span>
 			</div>
 
 			<div v-if="banner" :key="banner.id" class="banner">
 				<span class="banner__word">{{ banner.text }}</span>
-				<span class="banner__mult">×{{ banner.mult }}</span>
+				<span class="banner__mult">{{ banner.sub }}</span>
 			</div>
 
 			<div
@@ -94,9 +94,13 @@
 						is_hole: col.type === BOARD_ITEM.brick,
 						is_visited: !canToBack && col.type === BOARD_ITEM.cell,
 						land: landed === `${rowInd}:${colInd}`,
+						cracking: cracking.includes(`${rowInd}:${colInd}`),
+						restored: restoredNow.includes(`${rowInd}:${colInd}`),
 					}"
 					@click="move(rowInd, colInd)"
 				>
+					<span v-if="cracking.includes(`${rowInd}:${colInd}`)" class="crack"></span>
+					<span v-if="fellNow.includes(`${rowInd}:${colInd}`)" class="fall-tile"></span>
 					<Transition name="item">
 						<img
 							v-if="col.type === BOARD_ITEM.pill"
@@ -104,6 +108,7 @@
 							:class="[
 								{ hide: isHide },
 								`item--${itemGroup(itemAt(rowInd, colInd))}`,
+								{ 'item--special': isSpecialItem(itemAt(rowInd, colInd)) },
 							]"
 							:style="{ animationDelay: `${((rowInd * 3 + colInd) % 8) * -0.25}s` }"
 							:src="ITEM_IMG[itemAt(rowInd, colInd)]"
@@ -129,6 +134,7 @@ import {
 	KnightMood,
 	ITEM_IMG,
 	itemGroup,
+	isSpecialItem,
 } from '@/game/items'
 
 import { useGameSettings } from '@/store/gameSettings'
@@ -166,7 +172,11 @@ const $props = withDefaults(
 		canToBack?: boolean
 		items?: Record<string, ItemKind>
 		popups?: IBoardPopup[]
-		banner?: { id: number; text: string; mult: number } | null
+		banner?: { id: number; text: string; sub: string } | null
+		// Time Attack: трещины, только что упавшие и только что вернувшиеся плитки
+		cracking?: string[]
+		fellNow?: string[]
+		restoredNow?: string[]
 		mood?: KnightMood
 		// обучение: куда показать ход и что написать
 		// target: null — только подсказка над доской, без стрелки
@@ -180,6 +190,9 @@ const $props = withDefaults(
 		banner: null,
 		mood: 'happy',
 		guide: null,
+		cracking: () => [],
+		fellNow: () => [],
+		restoredNow: () => [],
 	}
 )
 
@@ -453,6 +466,46 @@ function calculateBoardWidth() {
 			cursor: default;
 		}
 
+		/* Трещина: плитка дрожит и темнеет — скоро упадёт */
+		&.cracking {
+			animation: tile-shake 0.12s linear infinite;
+			background: #9aa3d8;
+		}
+
+		.crack {
+			position: absolute;
+			inset: 0;
+			z-index: 4;
+			border-radius: 6px;
+			pointer-events: none;
+			background: linear-gradient(
+					115deg,
+					transparent 40%,
+					#1a1033 41%,
+					#1a1033 45%,
+					transparent 46%
+				),
+				linear-gradient(35deg, transparent 52%, #1a1033 53%, #1a1033 56%, transparent 57%),
+				linear-gradient(160deg, transparent 62%, #1a1033 63%, #1a1033 66%, transparent 67%);
+			opacity: 0.75;
+		}
+
+		/* Плитка проваливается вниз и исчезает */
+		.fall-tile {
+			position: absolute;
+			inset: 0;
+			z-index: 4;
+			border-radius: 6px;
+			background: #9aa3d8;
+			pointer-events: none;
+			animation: tile-fall 0.5s ease-in forwards;
+		}
+
+		/* Подарок вернул плитку */
+		&.restored {
+			animation: tile-restore 0.45s ease-out;
+		}
+
 		/* Клетка «принимает» коня: короткое приседание */
 		&.land {
 			animation: cell-land 0.28s ease-out;
@@ -501,6 +554,12 @@ function calculateBoardWidth() {
 			&--crown {
 				filter: drop-shadow(0 0 5px rgba(255, 245, 170, 0.95));
 				animation: item-float 1.6s ease-in-out infinite;
+			}
+
+			/* Особые предметы забега: секундомер, волшебная конфета, подарок */
+			&--special {
+				filter: drop-shadow(0 0 6px rgba(140, 230, 255, 1));
+				animation: item-special 1s ease-in-out infinite;
 			}
 
 			/* Предмет «съеден»: подскок и исчезновение, вспышку рисует popup.
@@ -772,6 +831,53 @@ function calculateBoardWidth() {
 	}
 	50% {
 		transform: translateY(-5%);
+	}
+}
+
+@keyframes item-special {
+	0%,
+	100% {
+		transform: scale(1) rotate(-6deg);
+	}
+	50% {
+		transform: scale(1.12) rotate(6deg);
+	}
+}
+
+@keyframes tile-shake {
+	0% {
+		transform: translate(0, 0);
+	}
+	25% {
+		transform: translate(-1px, 1px);
+	}
+	50% {
+		transform: translate(1px, 0);
+	}
+	75% {
+		transform: translate(0, -1px);
+	}
+	100% {
+		transform: translate(0, 0);
+	}
+}
+
+@keyframes tile-fall {
+	to {
+		transform: translateY(40%) scale(0.2) rotate(18deg);
+		opacity: 0;
+	}
+}
+
+@keyframes tile-restore {
+	0% {
+		transform: scale(0.3);
+	}
+	65% {
+		transform: scale(1.12);
+	}
+	100% {
+		transform: scale(1);
 	}
 }
 

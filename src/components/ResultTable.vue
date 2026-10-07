@@ -21,6 +21,8 @@
 					shownTotal.toLocaleString('en-US')
 				}}</span>
 			</div>
+			<div v-if="newRecord" class="result-table__record">New record!</div>
+			<div v-else-if="best" class="result-table__best">Best: {{ best }}</div>
 			<div
 				v-for="(b, i) in bonuses"
 				v-show="i < bonusesShown"
@@ -43,6 +45,10 @@
 				<div v-if="showTime" class="result-table__stat">
 					<small>Time</small>
 					<b>{{ gameStore.curGameStat.time.replace(/\s/g, '') }}</b>
+				</div>
+				<div v-if="stage" class="result-table__stat">
+					<small>Stage</small>
+					<b>{{ stage }}</b>
 				</div>
 				<div v-if="maxCombo >= 2" class="result-table__stat">
 					<small>Combo</small>
@@ -74,7 +80,7 @@
 				Next Level
 			</button>
 			<div class="result-table__row-btns">
-				<button class="img-btn" aria-label="Levels" @click="routeTo(PAGES.LEVELS)">
+				<button class="img-btn" aria-label="Levels" @click="routeTo(homePage)">
 					<img :src="homeImg" alt="" />
 				</button>
 				<button class="pill-btn pill-btn--purple" @click="reload">
@@ -89,7 +95,7 @@
 import { ref, computed, toRefs, onMounted, onBeforeUnmount } from 'vue'
 import { Capacitor } from '@capacitor/core'
 
-import { PAGES } from '@/utils/conts'
+import { PAGES, GAME_TYPES } from '@/utils/conts'
 import { ItemGroup, KnightMood, ITEM_IMG } from '@/game/items'
 
 import starFullImg from '@/assets/img/game/star-full.webp'
@@ -137,6 +143,10 @@ const $props = withDefaults(
 		collected?: Record<ItemGroup, number>
 		mood?: KnightMood
 		hint?: string
+		// Time Attack: достигнутый этап, лучший счёт, новый рекорд
+		stage?: number | null
+		best?: number | null
+		newRecord?: boolean
 	}>(),
 	{
 		title: 'Game End',
@@ -149,6 +159,9 @@ const $props = withDefaults(
 		collected: () => ({ candy: 0, star: 0, crystal: 0, crown: 0 }),
 		mood: 'cheer',
 		hint: '',
+		stage: null,
+		best: null,
+		newRecord: false,
 	}
 )
 
@@ -156,6 +169,11 @@ const $emits = defineEmits(['reload'])
 
 const gameStore = useGameStore()
 const { nextLevel, selectLevel } = toRefs(useGameStore())
+
+// из забега «домой» — к выбору режима, карты уровней у него нет
+const homePage = computed(() =>
+	gameStore.gameType === GAME_TYPES.BY_TIME ? PAGES.LEVELTYPES : PAGES.LEVELS
+)
 
 const lootGroups = computed(() =>
 	(Object.keys(LOOT_IMG) as ItemGroup[])
@@ -409,6 +427,25 @@ function next() {
 		}
 	}
 
+	&__record {
+		align-self: center;
+		padding: 3px 16px;
+		border: 3px solid #1a1033;
+		border-radius: 999px;
+		background: linear-gradient(180deg, #ffe680 0%, #fecb23 100%);
+		color: #1a1033;
+		font-size: 16px;
+		font-weight: 800;
+		animation: record-pop 0.5s ease-out 1.2s backwards;
+	}
+
+	&__best {
+		text-align: center;
+		color: #5b5788;
+		font-size: 14px;
+		font-weight: 800;
+	}
+
 	&__hint {
 		padding: 6px 10px;
 		border-radius: 12px;
@@ -542,6 +579,20 @@ function next() {
 	}
 	100% {
 		transform: scale(1);
+	}
+}
+
+@keyframes record-pop {
+	0% {
+		transform: scale(0.3) rotate(-10deg);
+		opacity: 0;
+	}
+	70% {
+		transform: scale(1.15) rotate(3deg);
+		opacity: 1;
+	}
+	100% {
+		transform: scale(1) rotate(0);
 	}
 }
 

@@ -4,6 +4,9 @@ import lollipop from '@/assets/img/game/items/lollipop.webp'
 import star from '@/assets/img/game/items/star.webp'
 import crystal from '@/assets/img/game/items/crystal.webp'
 import crown from '@/assets/img/game/items/crown.webp'
+import rainbow from '@/assets/img/game/items/rainbow.webp'
+import stopwatch from '@/assets/img/game/ui/stopwatch.webp'
+import gift from '@/assets/img/game/items/gift.webp'
 
 export type ItemKind =
 	| 'candy-pink'
@@ -12,6 +15,10 @@ export type ItemKind =
 	| 'star'
 	| 'crystal'
 	| 'crown'
+	// только Time Attack: +время, смена поля, ремонт упавших плиток
+	| 'clock'
+	| 'portal'
+	| 'repair'
 
 // Три вида конфет — одна ценность, разный вид: поле пестрее, правила те же.
 export const ITEM_POINTS: Record<ItemKind, number> = {
@@ -21,6 +28,9 @@ export const ITEM_POINTS: Record<ItemKind, number> = {
 	star: 25,
 	crystal: 50,
 	crown: 100,
+	clock: 10,
+	portal: 50,
+	repair: 30,
 }
 
 export const ITEM_IMG: Record<ItemKind, string> = {
@@ -30,7 +40,14 @@ export const ITEM_IMG: Record<ItemKind, string> = {
 	star,
 	crystal,
 	crown,
+	clock: stopwatch,
+	portal: rainbow,
+	repair: gift,
 }
+
+/** Особые предметы Time Attack: свой эффект, в итогах не считаются. */
+export const isSpecialItem = (kind: ItemKind) =>
+	kind === 'clock' || kind === 'portal' || kind === 'repair'
 
 /** Редкие предметы получают эффект сильнее и счётчик в итогах. */
 export const RARE_ITEMS: ItemKind[] = ['star', 'crystal', 'crown']
@@ -46,6 +63,8 @@ export interface IBoardPopup {
 	col: number
 	points: number
 	group: ItemGroup
+	// вместо «+очки», например «+5s» у секундомера
+	label?: string
 }
 
 export const itemGroup = (kind: ItemKind): ItemGroup =>

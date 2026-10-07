@@ -2,7 +2,8 @@ import { ref, computed } from 'vue'
 import type { Component } from 'vue'
 import { defineStore } from 'pinia'
 
-import { PAGES, type PagesType } from '@/utils/conts'
+import { PAGES, GAME_TYPES, type PagesType } from '@/utils/conts'
+import { useGameStore } from '@/store/gameStore'
 
 import StartPage from '@/pages/StartPage.vue'
 import LevelTypes from '@/pages/LevelTypes.vue'
@@ -26,7 +27,10 @@ export const usePageStore = defineStore('PageStore', () => {
 	const backLink = computed(() => {
 		if (currentPage.value === PAGES.LEVELTYPES) return PAGES.START
 		else if (currentPage.value === PAGES.LEVELS) return PAGES.LEVELTYPES
-		else if (currentPage.value === PAGES.PLAYGROUND) return PAGES.LEVELS
+		else if (currentPage.value === PAGES.PLAYGROUND)
+			return useGameStore().gameType === GAME_TYPES.BY_TIME
+				? PAGES.LEVELTYPES
+				: PAGES.LEVELS
 		else return ''
 	})
 
