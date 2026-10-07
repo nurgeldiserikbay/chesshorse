@@ -87,6 +87,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, toRefs, onMounted, onBeforeUnmount } from 'vue'
+import { Capacitor } from '@capacitor/core'
 
 import { PAGES } from '@/utils/conts'
 import { ItemGroup, KnightMood, ITEM_IMG } from '@/game/items'
@@ -100,6 +101,11 @@ import knightCheer from '@/assets/img/game/knight/cheer.webp'
 
 import { usePageStore } from '@/store/pageStore'
 import { useGameStore } from '@/store/gameStore'
+
+import Admob from '@/utils/admob'
+
+// Первые уровни — без полноэкранной рекламы: новичок сначала втягивается
+const NO_ADS_BEFORE_LEVEL = 5
 
 const KNIGHT_IMG: Record<KnightMood, string> = {
 	happy: knightHappy,
@@ -199,9 +205,22 @@ function reload() {
 	$emits('reload')
 }
 
+// Реклама — по нажатию Next Level: игрок уже порадовался итогу и сам
+// переходит дальше. После проигрыша и на Replay её нет. Следующий уровень
+// стартует, только когда объявление закрыто, — иначе таймер шёл бы под ним.
+const leaving = ref(false)
+
 function next() {
-	if (nextLevel.value === undefined) return
-	selectLevel.value(nextLevel.value)
+	if (nextLevel.value === undefined || leaving.value) return
+	const target = nextLevel.value
+	const go = () => selectLevel.value(target)
+
+	if (Capacitor.getPlatform() !== 'android') return go()
+	leaving.value = true
+	void Admob.interstitial({
+		isFirst: gameStore.currentLevel < NO_ADS_BEFORE_LEVEL,
+		onInterstitialAdClosed: go,
+	})
 }
 </script>
 

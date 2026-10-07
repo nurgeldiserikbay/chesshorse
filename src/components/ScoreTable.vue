@@ -16,7 +16,6 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
-import { Capacitor } from '@capacitor/core'
 
 import { GAME_TYPES } from '@/utils/conts'
 
@@ -24,7 +23,6 @@ import stopwatchImg from '@/assets/img/game/ui/stopwatch.webp'
 
 import { useGameStore } from '@/store/gameStore'
 
-import Admob from '@/utils/admob'
 
 const $props = defineProps<{
 	isGameEnd?: boolean
@@ -78,12 +76,9 @@ watch(
 		if ($props.isGameEnd) {
 			clearTimer()
 			gameStore.gameEnd(timeValue.value)
-
-			// Партия закончена, результат уже на экране — естественная пауза.
-			// Показ ничего не ждёт и ничего не блокирует.
-			if (Capacitor.getPlatform() === 'android') {
-				Admob.interstitial({ onInterstitialAdClosed: () => {} })
-			}
+			// Полноэкранная реклама здесь больше не показывается: она перебивала
+			// окно победы и выходила даже после проигрыша. Теперь — по нажатию
+			// Next Level (ResultTable.vue).
 		}
 	}
 )

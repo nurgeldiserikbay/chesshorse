@@ -138,6 +138,10 @@ class Admob {
 	private lastInterstitialAt = 0
 	private readonly INTERSTITIAL_EVERY_N = 3 // показывать не чаще, чем каждую 3-ю партию
 	private readonly INTERSTITIAL_MIN_INTERVAL_MS = 75_000 // и не чаще раза в ~75 c
+	// Первые минуты после запуска — без полноэкранной рекламы: больше всего
+	// игроков уходит именно в начале первой сессии.
+	private readonly INTERSTITIAL_GRACE_MS = 180_000
+	private readonly startedAt = Date.now()
 
 	// Детская конфигурация запросов применяется именно в initialize(), поэтому ни
 	// один запрос рекламы не должен уйти раньше. Промис кэшируется: точки показа
@@ -401,7 +405,9 @@ class Admob {
 		const capByTime =
 			now - this.lastInterstitialAt < this.INTERSTITIAL_MIN_INTERVAL_MS
 
-		if (isFirst || capByCount || capByTime) {
+		const inGrace = now - this.startedAt < this.INTERSTITIAL_GRACE_MS
+
+		if (isFirst || inGrace || capByCount || capByTime) {
 			onInterstitialAdClosed()
 			void this.preloadInterstitial()
 			return
