@@ -13,8 +13,8 @@ ext {
     androidxJunitVersion = '1.1.5'
     androidxEspressoCoreVersion = '3.5.1'
     cordovaAndroidVersion = '10.1.1'
-    versionCode = 15
-    versionName = '15.0'
+    versionCode = 16
+    versionName = '16.0'
 
     // Закреплено намеренно. Плагин admob по умолчанию берёт '24.9.+', а плавающая
     // версия может разрешиться в сборку вне списка Families Self-Certified Ads SDK,
