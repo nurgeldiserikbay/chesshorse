@@ -59,6 +59,12 @@ class Admob {
 	private bannerLoaded = false
 	/** Последняя известная высота объявления. */
 	private bannerHeightPx = 0
+	/**
+	 * На сколько плагин поднял баннер над нижней кромкой (CSS px). Сообщает
+	 * пропатченный плагин событием bannerAdOffsetChanged. null — ещё не
+	 * сообщил (Android ниже 15 баннер не поднимает), тогда берём env().
+	 */
+	private bannerOffsetPx: number | null = null
 
 	/** Подписка страницы на состояние слота. Ставится до initialize(). */
 	onBannerChange(listener: (live: boolean, height: number) => void) {
@@ -104,8 +110,13 @@ class Admob {
 	private setBannerInset(on: boolean) {
 		if (typeof document === 'undefined') return
 		const root = document.documentElement.style
-		if (on) root.setProperty('--ad-inset', 'env(safe-area-inset-bottom, 0px)')
-		else root.removeProperty('--ad-inset')
+		if (!on) root.removeProperty('--ad-inset')
+		// Точный отступ от плагина важнее env(): в immersive-режиме env() равен
+		// нулю, а плагин всё равно поднимает баннер на высоту панели кнопок —
+		// так баннер и заезжал на панель счёта.
+		else if (this.bannerOffsetPx !== null)
+			root.setProperty('--ad-inset', `${this.bannerOffsetPx}px`)
+		else root.setProperty('--ad-inset', 'env(safe-area-inset-bottom, 0px)')
 	}
 
 	/** Слот пуст: место остаётся, но в нём снова кросс-промо. */
@@ -175,6 +186,15 @@ class Admob {
 	private registerBannerListeners() {
 		if (this.bannerListenersRegistered) return
 		this.bannerListenersRegistered = true
+
+		// Событие добавлено нашим патчем плагина (patches/), в типах его нет
+		;(AdMob.addListener as unknown as (
+			event: string,
+			cb: (data: { bottom?: number }) => void
+		) => void)('bannerAdOffsetChanged', (data) => {
+			this.bannerOffsetPx = Math.max(0, Math.round(data?.bottom || 0))
+			if (this.bannerLoaded || this.bannerHeightPx) this.setBannerInset(true)
+		})
 
 		AdMob.addListener(BannerAdPluginEvents.Loaded, () => {
 			this.bannerLoaded = true
