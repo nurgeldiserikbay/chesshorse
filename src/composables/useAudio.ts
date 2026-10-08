@@ -5,7 +5,7 @@ import { ref } from 'vue'
    Звуки короткие и мягкие (синус/треугольник с быстрым затуханием),
    ноты сбора идут по пентатонике и поднимаются с серией, складываясь
    в мелодию. Фоновая мелодия — тихая «музыкальная шкатулка» по кругу
-   C–Am–F–G, планируется наперёд и затихает, когда приложение свёрнуто.
+   C–Am–F–G (в меню; в партии и забеге — свои), планируется наперёд и затихает, когда приложение свёрнуто.
 */
 
 export type SfxName =
@@ -170,45 +170,100 @@ function playSfx(name: SfxName, step = 1) {
 
 /* ---------- фоновая мелодия ---------- */
 
-const BPM = 92
-const EIGHTH = 60 / BPM / 2
+// Три мелодии: спокойная для меню, бодрее для партии, быстрая для забега.
+// При переходе между экранами одна плавно гаснет, другая проявляется.
+export type MusicTrack = 'menu' | 'game' | 'rush'
 
-// Аккорды по тактам (корень в басу) и мелодия восьмыми; 0 — пауза
-const CHORDS = [48, 45, 41, 43, 48, 45, 41, 43]
-const MELODY = [
-	[76, 0, 79, 0, 81, 79, 76, 0],
-	[72, 0, 76, 0, 74, 72, 69, 0],
-	[77, 0, 81, 0, 79, 77, 76, 0],
-	[74, 0, 79, 0, 77, 76, 74, 0],
-	[76, 0, 79, 0, 84, 0, 83, 81],
-	[81, 0, 76, 0, 81, 79, 76, 0],
-	[77, 0, 81, 79, 77, 0, 74, 0],
-	[74, 76, 77, 74, 72, 0, 0, 0],
-]
+interface ITrack {
+	bpm: number
+	roots: number[] // басовая нота такта
+	minor: boolean[] // минорный ли аккорд такта
+	melody: number[][] // восьмые; 0 — пауза
+	note: number // длительность ноты мелодии, с
+}
 
+const TRACKS: Record<MusicTrack, ITrack> = {
+	// C–Am–F–G, музыкальная шкатулка
+	menu: {
+		bpm: 92,
+		roots: [48, 45, 41, 43, 48, 45, 41, 43],
+		minor: [false, true, false, false, false, true, false, false],
+		note: 0.7,
+		melody: [
+			[76, 0, 79, 0, 81, 79, 76, 0],
+			[72, 0, 76, 0, 74, 72, 69, 0],
+			[77, 0, 81, 0, 79, 77, 76, 0],
+			[74, 0, 79, 0, 77, 76, 74, 0],
+			[76, 0, 79, 0, 84, 0, 83, 81],
+			[81, 0, 76, 0, 81, 79, 76, 0],
+			[77, 0, 81, 79, 77, 0, 74, 0],
+			[74, 76, 77, 74, 72, 0, 0, 0],
+		],
+	},
+	// Am–F–C–G, чуть бодрее: фон для раздумий над ходом
+	game: {
+		bpm: 104,
+		roots: [45, 41, 48, 43, 45, 41, 48, 43],
+		minor: [true, false, false, false, true, false, false, false],
+		note: 0.55,
+		melody: [
+			[69, 0, 72, 0, 76, 0, 72, 0],
+			[77, 0, 76, 0, 72, 0, 69, 0],
+			[72, 0, 76, 79, 76, 0, 72, 0],
+			[74, 0, 79, 0, 74, 0, 71, 0],
+			[69, 72, 76, 72, 69, 0, 72, 0],
+			[77, 76, 77, 81, 77, 0, 0, 0],
+			[79, 0, 76, 0, 72, 76, 79, 0],
+			[74, 0, 71, 0, 74, 0, 0, 0],
+		],
+	},
+	// C–G–Am–F, быстрые арпеджио под забег на время
+	rush: {
+		bpm: 132,
+		roots: [48, 43, 45, 41, 48, 43, 45, 41],
+		minor: [false, false, true, false, false, false, true, false],
+		note: 0.3,
+		melody: [
+			[72, 76, 79, 76, 72, 76, 79, 84],
+			[71, 74, 79, 74, 71, 74, 79, 83],
+			[69, 72, 76, 72, 69, 72, 76, 81],
+			[69, 72, 77, 72, 77, 81, 77, 72],
+			[84, 0, 79, 0, 76, 0, 79, 0],
+			[83, 0, 79, 0, 74, 0, 79, 0],
+			[81, 0, 76, 0, 72, 0, 76, 0],
+			[77, 79, 81, 79, 77, 76, 74, 72],
+		],
+	},
+}
+
+let track: ITrack = TRACKS.menu
+let trackName: MusicTrack = 'menu'
 let schedTimer: ReturnType<typeof setInterval> | undefined
 let nextTime = 0
 let stepIndex = 0
+// Полноэкранная реклама на экране — музыка молчит, пока её не закроют
+let adPaused = false
 
 function scheduleMusic() {
 	if (!ctx || !musicBus) return
+	const eighth = 60 / track.bpm / 2
 	while (nextTime < ctx.currentTime + 0.4) {
-		const bar = Math.floor(stepIndex / 8) % CHORDS.length
+		const bar = Math.floor(stepIndex / 8) % track.roots.length
 		const beat = stepIndex % 8
-		const root = CHORDS[bar]
+		const root = track.roots[bar]
 
-		const note = MELODY[bar][beat]
-		if (note) tone(musicBus, midi(note), nextTime, { dur: 0.7, gain: 0.22, overtone: 0.3 })
+		const note = track.melody[bar][beat]
+		if (note) tone(musicBus, midi(note), nextTime, { dur: track.note, gain: 0.22, overtone: 0.3 })
 		// бас на первую и третью долю, тихие аккордовые ноты между
 		if (beat === 0 || beat === 4)
 			tone(musicBus, midi(root), nextTime, { dur: 0.9, gain: 0.2, type: 'triangle', overtone: 0 })
 		if (beat === 2 || beat === 6) {
-			const third = root + (bar % 4 === 1 ? 3 : 4)
+			const third = root + (track.minor[bar] ? 3 : 4)
 			tone(musicBus, midi(third + 12), nextTime, { dur: 0.4, gain: 0.07, overtone: 0 })
 			tone(musicBus, midi(root + 19), nextTime, { dur: 0.4, gain: 0.07, overtone: 0 })
 		}
 
-		nextTime += EIGHTH
+		nextTime += eighth
 		stepIndex++
 	}
 }
@@ -221,8 +276,10 @@ function fadeMusic(to: number, sec = 0.6) {
 	g.linearRampToValueAtTime(to, ctx.currentTime + sec)
 }
 
+const canPlay = () => musicActive.value && !document.hidden && !adPaused
+
 function startMusic() {
-	if (!musicActive.value || document.hidden) return
+	if (!canPlay()) return
 	const c = getCtx()
 	if (!c) return
 	if (c.state === 'suspended') void c.resume()
@@ -236,10 +293,43 @@ function startMusic() {
 function stopMusic() {
 	fadeMusic(0, 0.4)
 	setTimeout(() => {
-		if (musicActive.value && !document.hidden) return
+		if (canPlay()) return
 		clearInterval(schedTimer)
 		schedTimer = undefined
 	}, 450)
+}
+
+let switchTimer: ReturnType<typeof setTimeout> | undefined
+
+/** Сменить мелодию: текущая гаснет, новая начинается с первого такта */
+function setMusicTrack(name: MusicTrack) {
+	if (name === trackName) return
+	trackName = name
+	clearTimeout(switchTimer)
+	if (!schedTimer || !ctx) {
+		track = TRACKS[name]
+		stepIndex = 0
+		return
+	}
+	fadeMusic(0, 0.35)
+	switchTimer = setTimeout(() => {
+		track = TRACKS[name]
+		stepIndex = 0
+		if (ctx) nextTime = ctx.currentTime + 0.05
+		if (canPlay()) fadeMusic(0.32, 0.8)
+	}, 380)
+}
+
+/** На время полноэкранной рекламы — тишина */
+function pauseMusicForAd() {
+	adPaused = true
+	stopMusic()
+}
+
+function resumeMusicAfterAd() {
+	if (!adPaused) return
+	adPaused = false
+	if (musicActive.value && ctx) void ctx.resume().then(startMusic)
 }
 
 // Свернули приложение — тишина; вернулись — музыка дальше
@@ -248,11 +338,13 @@ if (typeof document !== 'undefined') {
 		if (document.hidden) {
 			stopMusic()
 			void ctx?.suspend()
-		} else if (musicActive.value && ctx) {
+		} else if (musicActive.value && ctx && !adPaused) {
 			void ctx.resume().then(startMusic)
 		}
 	})
 }
+
+export { setMusicTrack, pauseMusicForAd, resumeMusicAfterAd }
 
 export const useAudio = () => {
 	function playAudio(name: SfxName, step = 1) {
@@ -279,5 +371,6 @@ export const useAudio = () => {
 		toggleMusic,
 		playAudio,
 		startMusic,
+		setMusicTrack,
 	}
 }

@@ -4,15 +4,11 @@ import { ref } from 'vue'
 import settingsImg from '@/assets/img/game/ui/settings.webp'
 import soundImg from '@/assets/img/game/ui/sound.webp'
 import muteImg from '@/assets/img/game/ui/mute.webp'
-import hintImg from '@/assets/img/game/ui/hint.webp'
 
 import UiToggle from '@/components/UiToggle.vue'
 
-import { useGameSettings } from '@/store/gameSettings'
-
 import { useAudio } from '@/composables/useAudio'
 
-const gameSettings = useGameSettings()
 const { audioActive, toggleAudio, musicActive, toggleMusic } = useAudio()
 
 const isActive = ref(false)
@@ -59,14 +55,6 @@ const isActive = ref(false)
 							<UiToggle :modelValue="musicActive" />
 						</div>
 
-						<div
-							class="settings-menu__option"
-							@click="gameSettings.toggleShowPossibleMoves"
-						>
-							<img class="settings-menu__icon" :src="hintImg" alt="" />
-							<span class="settings-menu__title">Show moves</span>
-							<UiToggle :modelValue="gameSettings.showPossibleMoves" />
-						</div>
 					</div>
 
 					<button class="settings-menu__ok" @click="isActive = false">OK</button>

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onBeforeMount, onMounted } from 'vue'
+import { onBeforeMount, onMounted, watch } from 'vue'
 import { Capacitor } from '@capacitor/core'
 import { StatusBar } from '@capacitor/status-bar'
 import { SplashScreen } from '@capacitor/splash-screen'
@@ -10,7 +10,8 @@ import { usePageStore } from '@/store/pageStore'
 import { useGameStore } from '@/store/gameStore'
 
 import Admob from '@/utils/admob'
-import { useAudio } from '@/composables/useAudio'
+import { useAudio, type MusicTrack } from '@/composables/useAudio'
+import { PAGES, GAME_TYPES } from '@/utils/conts'
 
 import { useAdsStore } from '@/store/adsStore'
 
@@ -25,7 +26,19 @@ onBeforeMount(() => {
 
 // Браузер и WebView дают включить звук только после касания — музыка
 // стартует с первого же нажатия в любом месте.
-const { startMusic } = useAudio()
+const { startMusic, setMusicTrack } = useAudio()
+
+// Своя мелодия у меню, у партии и у забега на время
+watch(
+	() => [pageStore.currentPage, gameStore.gameType],
+	() => {
+		let track: MusicTrack = 'menu'
+		if (pageStore.currentPage === PAGES.PLAYGROUND)
+			track = gameStore.gameType === GAME_TYPES.BY_TIME ? 'rush' : 'game'
+		setMusicTrack(track)
+	},
+	{ immediate: true }
+)
 window.addEventListener('pointerdown', () => startMusic(), { once: true })
 
 onMounted(async () => {

@@ -14,6 +14,8 @@ import { App as CapacitorApp } from '@capacitor/app'
 import { StatusBar } from '@capacitor/status-bar'
 import { Fullscreen } from '@boengli/capacitor-fullscreen'
 
+import { pauseMusicForAd, resumeMusicAfterAd } from '@/composables/useAudio'
+
 // Целевая аудитория игры в Google Play включает детей, поэтому действует
 // Families Policy: каждый рекламный запрос должен быть помечен как детский,
 // ограничен инвентарём с рейтингом G и неперсонализирован. Отключение любого из
@@ -297,6 +299,7 @@ class Admob {
 	private handleInterstitialClosed() {
 		this.releaseInterstitialFlow()
 		this.restoreBarsAfterAd()
+		resumeMusicAfterAd()
 	}
 
 	// Снимает только блокировку игрового потока, не касаясь системных панелей:
@@ -434,6 +437,8 @@ class Admob {
 		}, INTERSTITIAL_WATCHDOG_MS)
 
 		try {
+			// музыка не должна играть поверх рекламы — вернётся после закрытия
+			pauseMusicForAd()
 			await AdMob.showInterstitial()
 		} catch (error) {
 			console.log(error)
