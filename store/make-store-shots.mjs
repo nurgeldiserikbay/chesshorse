@@ -1,4 +1,4 @@
-// Снимает витрину Google Play: шесть экранов на каждое из трёх устройств.
+// Снимает витрину Google Play: восемь экранов на каждое из трёх устройств.
 //
 // Соотношение у всех кадров ровно 9:16 — Play принимает только 16:9 или 9:16
 // (03-MathBoxes уже получал отказ за 5:8). Вьюпорт взят как у настоящего
@@ -53,6 +53,10 @@ for (let i = 0; i < DONE; i++)
 		stars: STARS[i],
 		score: 2400 + i * 37,
 	}
+// One Way: пройдены первые 20 головоломок — открыт 21-й, с развилками
+const ONE_WAY_OPEN = 20
+for (let i = 0; i < ONE_WAY_OPEN; i++)
+	stats.NO_WAY_BACK[i] = { time: '', moves: 10, date: 'x', score: 900 + i * 40 }
 
 const HIDE_ADS = `
 	:root { --ad-band: 0px !important; }
@@ -72,6 +76,8 @@ async function openApp(browser, dev, { tutorial = false } = {}) {
 				if (tutorial) localStorage.removeItem('chesshorse.tutorial')
 				else localStorage.setItem('chesshorse.tutorial', '1')
 				localStorage.setItem('chesshorse.music', '0')
+				// без отметки версии игра сочтёт статистику One Way старой и сбросит
+				localStorage.setItem('chesshorse.oneway.version', '2')
 			} catch {}
 		},
 		{ stats, tutorial }
@@ -181,6 +187,36 @@ for (const dev of DEVICES) {
 	await page.waitForSelector('.result-table')
 	await page.waitForTimeout(3200) // звёзды и бонусы успевают прилететь
 	await shot(page, '06-level-complete.png')
+	await page.close()
+
+	// 7: One Way — головоломка, с подсказкой правила над доской
+	page = await openApp(browser, dev)
+	await page.click('.start-page__btn')
+	await page.locator('.mode-card--purple').click()
+	await page.waitForSelector('.node')
+	await page.locator('.node').nth(ONE_WAY_OPEN).dispatchEvent('click')
+	await page.waitForSelector('.table__col .item')
+	await page.waitForTimeout(900)
+	await shot(page, '07-one-way-puzzle.png')
+	await page.close()
+
+	// 8: Time Attack — забег после смены поля, на доске трещина
+	page = await openApp(browser, dev)
+	await page.click('.start-page__btn')
+	await page.locator('.mode-card--blue').click()
+	await page.waitForSelector('.table__col .item')
+	let stage2 = false
+	const started = Date.now()
+	while (Date.now() - started < 60000) {
+		if (await page.locator('.result-table').count()) break
+		if (await page.locator('.banner__word', { hasText: 'Stage' }).count()) stage2 = true
+		const calm = !(await page.locator('.banner').count()) && !(await page.locator('.popup').count())
+		if (stage2 && calm && (await page.locator('.crack').count())) break
+		await stepToItem(page)
+		await page.waitForTimeout(450)
+	}
+	await page.waitForTimeout(250)
+	await shot(page, '08-time-attack.png')
 	await page.close()
 
 	console.log('готово:', dev.dir)
